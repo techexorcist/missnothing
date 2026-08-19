@@ -1,0 +1,15 @@
+{
+  "id": "gold-01",
+  "from": "vnspreprimary@vidyaniketanhebbal.org",
+  "message_date": "2026-08-15T14:43:00+05:30",
+  "expect": {
+    "type": "dated_action",
+    "date": "2026-08-19",
+    "all_day": true,
+    "items": [
+      { "kind": "dress", "text_contains": "ethnic outfit" },
+      { "kind": "bring", "text_contains": "Bagless Day" }
+    ]
+  },
+  "must_reject_as_event_date": ["2026-08-15", "34/MONT/2026-27", "2026-27"]
+}

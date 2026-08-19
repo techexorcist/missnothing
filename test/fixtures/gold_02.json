@@ -1,0 +1,21 @@
+{
+  "id": "gold-02",
+  "from": "vnspreprimary@vidyaniketanhebbal.org",
+  "message_date": "2026-07-29",
+  "expect": {
+    "type": "decision",
+    "date": null,
+    "urgency": "act_today",
+    "when_hint": "dispersal",
+    "items": [
+      {
+        "kind": "offer",
+        "text_contains": "sweaters",
+        "location": "carton box at the center foyer"
+      }
+    ]
+  },
+  "must_reject_as_event_date": ["2026-07-29", "25/MONT/2026-27"],
+  "must_keep_typo": "swears",
+  "not_nothing_found": true
+}

@@ -1,0 +1,32 @@
+# Dart
+.dart_tool/
+.packages
+build/
+
+# Flutter (when the walking skeleton lands)
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+**/*.iml
+.idea/
+.vscode/
+android/.gradle/
+android/local.properties
+ios/Pods/
+ios/.symlinks/
+*.xcuserdata
+
+# Secrets — never commit
+.env
+.env.*
+**/credentials.json
+**/client_secret*.json
+google-services.json
+GoogleService-Info.plist
+*.jks
+*.keystore
+key.properties
+**/app_config.local.dart
+
+.DS_Store
+*.swp

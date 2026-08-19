@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy policy — MissNothing</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, sans-serif; max-width: 42rem; margin: 3rem auto; padding: 0 1.25rem; line-height: 1.55; color: #1a1a1a; }
+    h1, h2 { line-height: 1.25; }
+    a { color: #0b57d0; }
+    .meta { color: #555; }
+  </style>
+</head>
+<body>
+  <p><a href="index.html">MissNothing</a></p>
+  <h1>Privacy policy</h1>
+  <p class="meta">Last updated: 19 August 2026</p>
+
+  <p>MissNothing (“the app”) is a local alarm layer over school circulars. This policy describes how the app uses Gmail on your device. It is written for Google’s OAuth consent screen and for you.</p>
+
+  <h2>Who we are</h2>
+  <p>The app is developed by Vinodh Nagarajaiah. There is no company backend and no MissNothing account. Questions: open an issue on the <a href="https://github.com/techexorcist/missnothing">GitHub repository</a>.</p>
+
+  <h2>What the app accesses</h2>
+  <p>When you tap Connect Gmail, the app requests the Google scope <code>gmail.readonly</code> only. It never requests send, compose, or modify scopes. The app can read mail you already have in Gmail; it cannot send mail as you.</p>
+  <p>The app uses that access to:</p>
+  <ul>
+    <li>list recent message headers so you can allowlist school senders</li>
+    <li>download bodies of messages from senders you allowlisted</li>
+    <li>extract proposed actions (dress, bring, dates, opt-in offers) on the device</li>
+    <li>schedule local notifications on this phone</li>
+  </ul>
+
+  <h2>Where mail is stored</h2>
+  <p>Mail the app downloads is stored only on this device, in a local database. Nothing is uploaded to us. We do not operate a server that receives your mail. Google already stores your Gmail; this app does not create a second cloud copy.</p>
+  <p>If a language model runs, it runs on the device (or as an OS system model). Mail is not sent to a cloud AI API.</p>
+
+  <h2>What we do not collect</h2>
+  <ul>
+    <li>no analytics, crash reporters, or advertising identifiers that leave the phone</li>
+    <li>no address book scrape beyond the Gmail headers of recent mail, used to suggest an allowlist</li>
+    <li>no sale or sharing of mail with third parties, because we never receive it</li>
+  </ul>
+
+  <h2>Notifications</h2>
+  <p>Reminders are local notifications scheduled by the app on this device. They are not push messages from a MissNothing server.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Disconnect Gmail in the app, or revoke access at <a href="https://myaccount.google.com/permissions">Google Account permissions</a>.</li>
+    <li>Uninstall the app to delete the on-device copy.</li>
+    <li>If you lose the phone and did not export a backup, that copy is gone. That is by design.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>The app is for a parent’s own Gmail. It is not directed at children and does not create child accounts.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the date at the top of this page will change. The URL of this page is what Google’s consent screen uses; it may later move to missnothing.app with the same content.</p>
+</body>
+</html>
