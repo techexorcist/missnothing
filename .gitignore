@@ -12,6 +12,9 @@ build/
 .vscode/
 android/.gradle/
 android/local.properties
+android/.kotlin/
+*.apk
+*.aab
 ios/Pods/
 ios/.symlinks/
 *.xcuserdata
