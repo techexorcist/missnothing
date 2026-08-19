@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+This is a solo personal repo. Commit and push to `main`. Do not open pull requests.
+
+Take one small vertical slice per session (something runnable or testable). Do not bundle biometric SQLCipher, cards, and Gmail history into one change.

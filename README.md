@@ -21,4 +21,5 @@ School circulars, turned into alarms. Local-only. Android walking skeleton first
 
 Connect Gmail → Sync. One exact notification fires ~90 seconds later. That is the OEM-kill test.
 
-Do not push to `main`. Open a PR.
+Work lands on `main` in small slices. No pull requests.
+
