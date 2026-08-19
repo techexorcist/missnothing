@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Do not commit or push to `main`. Open a feature branch and a pull request for every change; wait for the user to approve and merge.
