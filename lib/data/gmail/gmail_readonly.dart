@@ -5,6 +5,7 @@ import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:missnothing/config/app_config.dart';
+import 'package:missnothing/data/gmail/from_header.dart';
 import 'package:missnothing/data/parser/html_normalize.dart';
 import 'package:missnothing/data/parser/packs/school_in.dart';
 import 'package:missnothing/data/parser/proposal.dart';
@@ -27,6 +28,16 @@ class AllowlistedCircular {
   final Proposal proposal;
 }
 
+class AllowlistedFetch {
+  const AllowlistedFetch({
+    required this.notes,
+    this.hit,
+  });
+
+  final AllowlistedCircular? hit;
+  final List<String> notes;
+}
+
 GmailApi gmailApiForToken(String accessToken) {
   final credentials = AccessCredentials(
     AccessToken(
@@ -40,9 +51,10 @@ GmailApi gmailApiForToken(String accessToken) {
   return GmailApi(authenticatedClient(http.Client(), credentials));
 }
 
-/// Fetch allowlisted mail (including Spam/Trash) and return the first
-/// `school_in` dated circular. Prefers a Bagless/gold-01 hit when present.
-Future<AllowlistedCircular?> fetchDatedCircular(GmailApi gmail) async {
+/// Fetch allowlisted mail (including Spam/Trash). Returns the newest message
+/// that parses as any type. Skip reasons are always logged so a parser miss
+/// is not mistaken for an empty inbox.
+Future<AllowlistedFetch> fetchAllowlistedCircular(GmailApi gmail) async {
   final listed = await gmail.users.messages.list(
     'me',
     q: 'from:${AppConfig.allowlistedFrom} newer_than:30d',
@@ -50,50 +62,71 @@ Future<AllowlistedCircular?> fetchDatedCircular(GmailApi gmail) async {
     maxResults: 25,
   );
   final refs = listed.messages;
-  if (refs == null || refs.isEmpty) return null;
+  if (refs == null || refs.isEmpty) {
+    return const AllowlistedFetch(
+      notes: ['Gmail list returned no messages (Spam/Trash included).'],
+    );
+  }
 
-  AllowlistedCircular? fallback;
+  final notes = <String>[];
   for (final ref in refs) {
     final id = ref.id;
-    if (id == null) continue;
+    if (id == null) {
+      notes.add('skip: message ref had no id');
+      continue;
+    }
     final message = await gmail.users.messages.get(
       'me',
       id,
       format: 'full',
     );
-    final from = _header(message, 'From') ?? AppConfig.allowlistedFrom;
-    if (!_fromMatchesAllowlist(from)) continue;
+    final from = _header(message, 'From') ?? '';
+    if (!fromMatchesAllowlist(from, AppConfig.allowlistedFrom)) {
+      notes.add(
+        'skip $id: mailbox "${mailboxFromFromHeader(from)}" '
+        '!= ${AppConfig.allowlistedFrom} (From=$from)',
+      );
+      continue;
+    }
     final subject = _header(message, 'Subject') ?? '(no subject)';
     final body = extractMessageText(message);
-    if (body.trim().isEmpty) continue;
+    if (body.trim().isEmpty) {
+      notes.add('skip $id: empty body after normalize ($subject)');
+      continue;
+    }
     final parsed = parseSchoolIn(
       ParseInput(
         from: AppConfig.allowlistedFrom,
         messageDate: _messageDate(message),
         body: body,
+        subject: subject,
         threadId: message.threadId,
       ),
     );
-    if (parsed == null || parsed.type != ProposalType.datedAction) {
+    if (parsed == null) {
+      notes.add(
+        'skip $id: parser returned null — nothing-found, not a Gmail miss '
+        '($subject)',
+      );
       continue;
     }
-    final hit = AllowlistedCircular(
-      id: id,
-      from: from,
-      subject: subject,
-      messageDate: parsed.date ?? _messageDate(message),
-      body: body,
-      proposal: parsed,
+    notes.add(
+      'used $id type=${parsed.type.name} date=${parsed.date} '
+      '($subject)',
     );
-    final looksLikeGold01 = body.toLowerCase().contains('bagless');
-    if (looksLikeGold01) return hit;
-    fallback ??= hit;
+    return AllowlistedFetch(
+      hit: AllowlistedCircular(
+        id: id,
+        from: from,
+        subject: subject,
+        messageDate: parsed.date ?? _messageDate(message),
+        body: body,
+        proposal: parsed,
+      ),
+      notes: notes,
+    );
   }
-  return fallback;
-}
-
-bool _fromMatchesAllowlist(String from) {
-  return from.toLowerCase().contains(AppConfig.allowlistedFrom.toLowerCase());
+  return AllowlistedFetch(notes: notes);
 }
 
 DateTime _messageDate(Message message) {

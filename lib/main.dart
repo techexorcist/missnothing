@@ -8,6 +8,10 @@ import 'config/app_config.dart';
 import 'data/gmail/gmail_readonly.dart';
 import 'data/reminders/one_shot_alarm.dart';
 
+const _pasteWebClientId =
+    'Paste the Web OAuth client ID into lib/config/app_config.dart '
+    '(googleServerClientId), then stop and run (not hot reload).';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MissNothingApp());
@@ -41,7 +45,9 @@ class SkeletonPage extends StatefulWidget {
 
 class _SkeletonPageState extends State<SkeletonPage> {
   GoogleSignInAccount? _user;
-  String _log = 'Connect Gmail, then Sync. Alarm fires ~90s later.';
+  String _log =
+      'Connect Gmail, then Sync. 90s is a smoke test. 5h is the OEM test: '
+      'swipe the app out of recents, lock the phone, leave it.';
   bool _busy = false;
   bool _signInReady = false;
 
@@ -79,6 +85,10 @@ class _SkeletonPageState extends State<SkeletonPage> {
   }
 
   Future<void> _connect() async {
+    if (AppConfig.googleServerClientId.isEmpty) {
+      setState(() => _log = _pasteWebClientId);
+      return;
+    }
     setState(() {
       _busy = true;
       _log = 'Signing in…';
@@ -116,11 +126,8 @@ class _SkeletonPageState extends State<SkeletonPage> {
       return;
     }
     if (AppConfig.googleServerClientId.isEmpty) {
-      setState(() {
-        _log =
-            'Paste the Web OAuth client ID into lib/config/app_config.dart '
-            '(googleServerClientId), then hot restart.';
-      });
+      setState(() => _log = _pasteWebClientId);
+      return;
     }
     setState(() {
       _busy = true;
@@ -136,11 +143,14 @@ class _SkeletonPageState extends State<SkeletonPage> {
         return;
       }
       final gmail = gmailApiForToken(authz.accessToken);
-      final hit = await fetchDatedCircular(gmail);
+      final fetched = await fetchAllowlistedCircular(gmail);
+      final notes = fetched.notes.join('\n');
+      final hit = fetched.hit;
       if (hit == null) {
         setState(() {
           _log =
-              'No dated circular from ${AppConfig.allowlistedFrom} in the last 30 days (Spam included).';
+              'No parsable circular from ${AppConfig.allowlistedFrom} '
+              'in the last 30 days (Spam included).\n$notes';
         });
         return;
       }
@@ -149,8 +159,10 @@ class _SkeletonPageState extends State<SkeletonPage> {
         _log = 'Parsed ${hit.subject}\n'
             'type=${hit.proposal.type.name} date=${hit.proposal.date}\n'
             'items=${hit.proposal.items.length}\n'
-            'Exact alarm at $when\n'
-            'Leave the app; OEM must not swallow it.';
+            '90s smoke at ${when.near}\n'
+            '5h OEM at ${when.far}\n'
+            'Swipe out of recents, lock, leave it. 90s firing proves nothing.\n'
+            '$notes';
       });
     } catch (e) {
       setState(() => _log = 'Sync failed: $e');
@@ -169,9 +181,7 @@ class _SkeletonPageState extends State<SkeletonPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              _user == null
-                  ? 'Not connected'
-                  : 'Gmail: ${_user!.email}',
+              _user == null ? 'Not connected' : 'Gmail: ${_user!.email}',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),

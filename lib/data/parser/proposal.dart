@@ -22,6 +22,8 @@ class ProposalItem {
 
   final ItemKind kind;
   final String textRaw;
+
+  /// Where to go. Locked on the item, not the card.
   final String? location;
 }
 
@@ -32,13 +34,14 @@ class Proposal {
     required this.items,
     this.date,
     this.allDay,
+    this.location,
     this.urgency = Urgency.none,
     this.whenHint,
     this.threadId,
+    this.dateCandidates = const [],
   });
 
   final ProposalType type;
-  /// Civil date `YYYY-MM-DD`, or null for undated/decision.
   final DateTime? date;
   final bool? allDay;
   final Urgency urgency;
@@ -46,6 +49,10 @@ class Proposal {
   final String from;
   final String? threadId;
   final List<ProposalItem> items;
+
+  /// Also stored on offer items. Kept here so a card can name a place.
+  final String? location;
+  final List<DateTime> dateCandidates;
 }
 
 class ParseInput {
@@ -54,10 +61,15 @@ class ParseInput {
     required this.messageDate,
     required this.body,
     this.threadId,
+    this.subject = '',
+    this.hasAttachments = false,
   });
 
   final String from;
   final DateTime messageDate;
+  DateTime get headerDate => messageDate;
   final String body;
   final String? threadId;
+  final String subject;
+  final bool hasAttachments;
 }

@@ -1,125 +1,186 @@
+/// Candidate date extraction.
+///
+/// A reference number on the letterhead must never parse as a date. A date
+/// equal to the mail's own Date header is the issue date, not the event.
+library;
+
 class DateCandidate {
   const DateCandidate({
     required this.date,
-    required this.raw,
+    required this.sourceText,
     required this.isIssueDate,
   });
 
   final DateTime date;
-  final String raw;
+  final String sourceText;
   final bool isIssueDate;
+
+  /// Alias used by gold tests.
+  String get raw => sourceText;
 }
 
-final _months = <String, int>{
-  'january': 1,
-  'jan': 1,
-  'february': 2,
-  'feb': 2,
-  'march': 3,
-  'mar': 3,
-  'april': 4,
-  'apr': 4,
-  'may': 5,
-  'june': 6,
-  'jun': 6,
-  'july': 7,
-  'jul': 7,
-  'august': 8,
-  'aug': 8,
-  'september': 9,
-  'sep': 9,
-  'sept': 9,
-  'october': 10,
-  'oct': 10,
-  'november': 11,
-  'nov': 11,
-  'december': 12,
-  'dec': 12,
-};
+const List<String> _monthNames = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+];
+const List<String> _monthAbbr = [
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'may',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+];
 
-final _cirNoLine = RegExp(r'cir\s*no\s*:', caseSensitive: false);
-final _refShape = RegExp(r'\d+/[A-Z]+/\d{4}-\d{2}');
-final _academicYear = RegExp(r'\b\d{4}-\d{2}\b');
-final _namedDate = RegExp(
-  r'\b(\d{1,2})(?:st|nd|rd|th)?\s+'
-  r'(january|february|march|april|may|june|july|august|september|october|november|december|'
-  r'jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s*'
-  r'(\d{4})?\b',
-  caseSensitive: false,
-);
-final _slashDate = RegExp(r'\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b');
-
-bool _blacklistedRaw(String raw) {
-  if (_refShape.hasMatch(raw)) return true;
-  if (_academicYear.hasMatch(raw) && !_namedDate.hasMatch(raw)) return true;
-  return false;
+int? _monthNumber(String word) {
+  final w = word.toLowerCase().replaceAll('.', '');
+  final full = _monthNames.indexOf(w);
+  if (full >= 0) return full + 1;
+  final abbr = _monthAbbr.indexOf(w);
+  if (abbr >= 0) return abbr + 1;
+  return null;
 }
 
-DateTime _civil(DateTime t) => DateTime(t.year, t.month, t.day);
+final String _monthAlt =
+    ([..._monthNames, ..._monthAbbr]..sort((a, b) => b.length - a.length))
+        .join('|');
 
-DateTime _withYear(int day, int month, int? year, DateTime header) {
-  final y = year ?? header.year;
-  var d = DateTime(y, month, day);
-  if (year != null) return d;
-  if (month < header.month || (month == header.month && day < header.day)) {
-    d = DateTime(header.year + 1, month, day);
+final List<RegExp> _refBlacklist = [
+  RegExp(r'Cir\.?\s*No\.?\s*:?\s*\S+', caseSensitive: false),
+  RegExp(r'Ref\.?\s*No\.?\s*:?\s*\S+', caseSensitive: false),
+  RegExp(r'Circular\s*No\.?\s*:?\s*\S+', caseSensitive: false),
+  RegExp(r'\b\d+/[A-Za-z]{2,}/\d{4}\s*-\s*\d{2,4}\b'),
+  RegExp(r'\b(?:19|20)\d{2}\s*-\s*\d{2}\b'),
+];
+
+String maskReferences(String body) {
+  var masked = body;
+  for (final rx in _refBlacklist) {
+    masked = masked.replaceAllMapped(rx, (m) => ' ' * m.group(0)!.length);
   }
-  return d;
+  return masked;
 }
 
-/// Enumerate date tokens. Cir-No / academic-year shapes are dropped.
-/// The email Date header’s civil day is marked [DateCandidate.isIssueDate].
-List<DateCandidate> enumerateDates(String body, DateTime messageDate) {
-  final header = _civil(messageDate);
-  final masked = body.replaceAll(_refShape, ' ');
-  final found = <String, DateCandidate>{};
+DateTime _civil(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  void add(DateTime date, String raw) {
-    if (_blacklistedRaw(raw)) return;
-    if (_cirNoLine.hasMatch(raw)) return;
-    final civil = _civil(date);
-    final key = '${civil.year}-${civil.month}-${civil.day}';
+DateTime? _withInferredYear(int day, int month, DateTime header) {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  DateTime? build(int year) {
+    final d = DateTime(year, month, day);
+    return (d.month == month && d.day == day) ? d : null;
+  }
+
+  final sameYear = build(header.year);
+  if (sameYear == null) return null;
+  if (sameYear.isBefore(_civil(header))) return build(header.year + 1);
+  return sameYear;
+}
+
+List<DateCandidate> extractDateCandidates(String body, DateTime headerDate) {
+  final header = _civil(headerDate);
+  final masked = maskReferences(body);
+  final found = <DateTime, DateCandidate>{};
+
+  void add(DateTime? d, String source) {
+    if (d == null) return;
+    final civil = _civil(d);
     found.putIfAbsent(
-      key,
+      civil,
       () => DateCandidate(
         date: civil,
-        raw: raw,
+        sourceText: source.trim(),
         isIssueDate: civil == header,
       ),
     );
   }
 
-  for (final m in _namedDate.allMatches(masked)) {
-    final day = int.parse(m[1]!);
-    final month = _months[m[2]!.toLowerCase()]!;
-    final year = m[3] == null ? null : int.parse(m[3]!);
-    if (day < 1 || day > 31) continue;
-    add(_withYear(day, month, year, header), m[0]!);
+  for (final m in RegExp(
+    r'\b(\d{1,2})(?:st|nd|rd|th)?\s+(' + _monthAlt + r')\b',
+    caseSensitive: false,
+  ).allMatches(masked)) {
+    final month = _monthNumber(m.group(2)!);
+    if (month == null) continue;
+    add(_withInferredYear(int.parse(m.group(1)!), month, header), m.group(0)!);
   }
 
-  for (final m in _slashDate.allMatches(masked)) {
-    if (_refShape.hasMatch(m[0]!)) continue;
-    final day = int.parse(m[1]!);
-    final month = int.parse(m[2]!);
-    if (month < 1 || month > 12 || day < 1 || day > 31) continue;
-    int? year;
-    if (m[3] != null) {
-      year = int.parse(m[3]!);
-      if (year < 100) year += 2000;
-    }
-    add(_withYear(day, month, year, header), m[0]!);
+  for (final m in RegExp(
+    r'\b(' + _monthAlt + r')\s+(\d{1,2})(?:st|nd|rd|th)?\b',
+    caseSensitive: false,
+  ).allMatches(masked)) {
+    final month = _monthNumber(m.group(1)!);
+    if (month == null) continue;
+    add(_withInferredYear(int.parse(m.group(2)!), month, header), m.group(0)!);
   }
 
-  return found.values.toList();
+  for (final m in RegExp(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b')
+      .allMatches(masked)) {
+    final day = int.parse(m.group(1)!);
+    final month = int.parse(m.group(2)!);
+    var year = int.parse(m.group(3)!);
+    if (year < 100) year += 2000;
+    if (month < 1 || month > 12) continue;
+    final d = DateTime(year, month, day);
+    if (d.month == month && d.day == day) add(d, m.group(0)!);
+  }
+
+  if (RegExp(r'\btomorrow\b', caseSensitive: false).hasMatch(masked)) {
+    add(header.add(const Duration(days: 1)), 'tomorrow');
+  }
+  if (RegExp(r'\btoday\b', caseSensitive: false).hasMatch(masked)) {
+    add(header, 'today');
+  }
+  final weekday = RegExp(
+    r'\b(?:this|next|coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b',
+    caseSensitive: false,
+  ).firstMatch(masked);
+  if (weekday != null) {
+    const names = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ];
+    final target = names.indexOf(weekday.group(1)!.toLowerCase()) + 1;
+    var delta = (target - header.weekday) % 7;
+    if (delta <= 0) delta += 7;
+    add(header.add(Duration(days: delta)), weekday.group(0)!);
+  }
+
+  final list = found.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+  return list;
 }
 
-/// Prefer a non-issue candidate. Keep the issue date only if nothing else exists
-/// *and* a caller later decides a directive binds that day.
+List<DateCandidate> realDates(List<DateCandidate> all) =>
+    all.where((c) => !c.isIssueDate).toList();
+
+/// Gold-test aliases.
+List<DateCandidate> enumerateDates(String body, DateTime messageDate) =>
+    extractDateCandidates(body, messageDate);
+
 DateTime? pickEventDate(List<DateCandidate> candidates) {
-  final others = candidates.where((c) => !c.isIssueDate).toList();
+  final others = realDates(candidates);
   if (others.isNotEmpty) return others.first.date;
   return null;
 }
 
-bool looksLikeAcademicYear(String token) => _academicYear.hasMatch(token);
-bool looksLikeCirRef(String token) => _refShape.hasMatch(token);
+bool looksLikeCirRef(String token) =>
+    RegExp(r'\d+/[A-Za-z]{2,}/\d{4}\s*-\s*\d{2,4}').hasMatch(token);

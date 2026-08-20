@@ -19,7 +19,7 @@ School circulars, turned into alarms. Local-only. Android walking skeleton first
 6. `export ANDROID_HOME="$HOME/Library/Android/sdk"`
 7. `flutter run`
 
-Connect Gmail → Sync. One exact notification fires ~90 seconds later. That is the OEM-kill test.
+Connect Gmail → Sync. Two exact notifications: **90 seconds** (smoke; fires on almost any phone) and **5 hours** (OEM test). After Sync, swipe the app out of recents, lock the phone, leave it. A 90-second fire does not prove Xiaomi/Oppo/Samsung will keep a 12-hour alarm.
 
 Work lands on `main` in small slices. No pull requests.
 
