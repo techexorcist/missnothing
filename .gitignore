@@ -21,6 +21,7 @@ ios/.symlinks/
 
 # Secrets — never commit
 secrets.json
+files/
 .env
 .env.*
 **/credentials.json
