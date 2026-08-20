@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/db/database.dart';
+import '../../data/events/day_label.dart';
 import '../../data/events/event_repository.dart';
 import '../../data/reminders/alarm_planner.dart';
 import '../../theme/mn_tokens.dart';
@@ -87,7 +88,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ] else ...[
                 Text(
-                  'TOMORROW · ${_shortDate(tomorrow)}',
+                  'TOMORROW · ${shortDay(tomorrow)}',
                   style: _kicker(tokens),
                 ),
                 const SizedBox(height: 8),
@@ -350,7 +351,3 @@ class _AlarmToggle extends StatelessWidget {
   }
 }
 
-String _shortDate(DateTime day) {
-  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return '${names[day.weekday - 1]} ${day.day}';
-}

@@ -121,6 +121,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         FilledButton.tonal(
+          onPressed: session.loadSampleSchoolDay,
+          child: const Text('Load sample school day'),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.tonal(
           onPressed: session.scheduleSmokeAlarms,
           child: const Text('Schedule 90s / 5h smoke alarms'),
         ),

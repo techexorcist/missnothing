@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../data/db/database.dart';
+import '../../data/events/day_label.dart';
+import '../../data/events/event_repository.dart';
 import '../../theme/mn_tokens.dart';
 import '../session.dart';
 import '../text/display_sanitize.dart';
@@ -15,8 +16,8 @@ class AgendaScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = MnTokens.of(context);
-    final events = session.weekEvents;
-    if (events.isEmpty) {
+    final rows = session.weekLedger;
+    if (rows.isEmpty) {
       return Column(
         children: [
           if (session.openEvents.isNotEmpty || session.maybeCards.isNotEmpty)
@@ -38,13 +39,11 @@ class AgendaScreen extends StatelessWidget {
         ],
       );
     }
-    final grouped = <String, List<Event>>{};
-    for (final event in events) {
-      final local = event.startsAt!.toLocal();
-      final key = '${local.year}-${local.month.toString().padLeft(2, '0')}';
-      grouped.putIfAbsent(key, () => []).add(event);
+    final grouped = <String, List<LedgerRow>>{};
+    for (final row in rows) {
+      final key = shortDay(row.event.startsAt!);
+      grouped.putIfAbsent(key, () => []).add(row);
     }
-    final months = grouped.keys.toList()..sort();
     return ListView(
       padding: EdgeInsets.all(tokens.space),
       children: [
@@ -57,6 +56,16 @@ class AgendaScreen extends StatelessWidget {
             color: tokens.ink2,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'What is on.',
+          style: TextStyle(
+            fontFamily: tokens.displayFamily,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink,
+          ),
+        ),
         if (session.openEvents.isNotEmpty || session.maybeCards.isNotEmpty)
           TextButton(
             onPressed: () => context.push('/open'),
@@ -64,26 +73,70 @@ class AgendaScreen extends StatelessWidget {
               '${session.openEvents.length + session.maybeCards.length} open items',
             ),
           ),
-        for (final month in months) ...[
+        for (final day in grouped.keys) ...[
           Padding(
-            padding: const EdgeInsets.only(bottom: 8, top: 8),
-            child: Text(month, style: Theme.of(context).textTheme.titleMedium),
+            padding: const EdgeInsets.only(bottom: 8, top: 16),
+            child: Text(
+              day.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4,
+                color: tokens.ink2,
+              ),
+            ),
           ),
-          for (final event in grouped[month]!)
-            Card(
-              child: ListTile(
-                leading: Icon(Icons.event_available, color: tokens.brand),
-                title: Text(displayText(event.title)),
-                subtitle: Text(
-                  [
-                    event.startsAt!.toLocal().toString().split(' ').first,
-                    if (event.location != null) displayText(event.location!),
-                    if (event.notes != null &&
-                        event.notes!.toLowerCase().contains('moved'))
-                      event.notes!,
-                  ].join(' · '),
+          for (final row in grouped[day]!)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Material(
+                color: tokens.surface,
+                elevation: 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: tokens.line,
+                      width: tokens.border,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: tokens.line,
+                        offset: const Offset(5, 5),
+                      ),
+                    ],
+                  ),
+                  child: ListTile(
+                    title: Text(
+                      itemHeadline(row.headline),
+                      style: TextStyle(
+                        fontFamily: tokens.displayFamily,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.ink,
+                      ),
+                    ),
+                    subtitle: Text(
+                      [
+                        dayClock(
+                          row.event.startsAt!,
+                          allDay: row.event.allDay,
+                        ),
+                        if (row.event.location != null)
+                          displayText(row.event.location!),
+                      ].join(' · '),
+                    ),
+                    trailing: row.movedFrom == null
+                        ? null
+                        : Text(
+                            row.movedFrom!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: tokens.actToday,
+                            ),
+                          ),
+                    onTap: () => context.push('/event/${row.event.id}'),
+                  ),
                 ),
-                onTap: () => context.push('/event/${event.id}'),
               ),
             ),
         ],

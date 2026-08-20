@@ -99,4 +99,21 @@ void main() {
     expect((await repo.byMessage('m1'))?.row.status, ProposalStatus.skipped);
     expect(await repo.unreviewed(), isEmpty);
   });
+
+  test('reschedule flags moved from on a new day', () async {
+    await repo.persistUnreviewed(circular());
+    final event = await repo.confirmAsEvent(
+      proposalId: 'prop_m1',
+      startsAt: DateTime(2026, 8, 21),
+    );
+    final moved = await EventRepository(db).reschedule(
+      eventId: event.id,
+      startsAt: DateTime(2026, 8, 24),
+    );
+    expect(moved.startsAt!.day, 24);
+    expect(moved.notes, 'moved from Fri 21');
+    final ledger = await EventRepository(db).ledger();
+    expect(ledger.single.movedFrom, 'moved from Fri 21');
+    expect(ledger.single.headline, 'Please bring a hat.');
+  });
 }

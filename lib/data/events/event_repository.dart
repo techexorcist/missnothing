@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../db/database.dart';
 import '../settings/settings_repository.dart';
+import 'day_label.dart';
 
 class EventRecord {
   const EventRecord({required this.event, required this.items});
@@ -32,6 +33,64 @@ class EventRepository {
     )..where((row) => row.eventId.equals(id))).get();
     items.sort((a, b) => a.position.compareTo(b.position));
     return EventRecord(event: event, items: items);
+  }
+
+  Future<List<LedgerRow>> ledger() async {
+    final events = await active();
+    final out = <LedgerRow>[];
+    for (final event in events) {
+      if (event.startsAt == null) continue;
+      final record = await byId(event.id);
+      final headline = record == null || record.items.isEmpty
+          ? event.title
+          : record.items.first.content;
+      out.add(
+        LedgerRow(
+          event: event,
+          headline: headline,
+          movedFrom: movedFromCopy(event.notes),
+        ),
+      );
+    }
+    return out;
+  }
+
+  Future<Event> reschedule({
+    required String eventId,
+    DateTime? startsAt,
+    String? location,
+  }) async {
+    final record = await byId(eventId);
+    if (record == null) {
+      throw StateError('Event $eventId is missing');
+    }
+    final previous = record.event.startsAt;
+    String? notes = record.event.notes;
+    if (previous != null &&
+        startsAt != null &&
+        !_sameDay(previous, startsAt)) {
+      notes = movedFromNote(previous);
+    }
+    await (db.update(db.events)..where((row) => row.id.equals(eventId))).write(
+      EventsCompanion(
+        startsAt: Value(startsAt),
+        location: Value(location ?? record.event.location),
+        notes: Value(notes),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+    return (await (db.select(
+      db.events,
+    )..where((row) => row.id.equals(eventId))).getSingle());
+  }
+
+  Future<void> setNotes(String id, String notes) async {
+    await (db.update(db.events)..where((row) => row.id.equals(id))).write(
+      EventsCompanion(
+        notes: Value(notes),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
   }
 
   Future<void> markDone(String id) async {
@@ -128,6 +187,18 @@ class LayoutSlot {
   final bool laidOut;
   final bool leaveAtHome;
   final bool nagMuted;
+}
+
+class LedgerRow {
+  const LedgerRow({
+    required this.event,
+    required this.headline,
+    this.movedFrom,
+  });
+
+  final Event event;
+  final String headline;
+  final String? movedFrom;
 }
 
 bool _sameDay(DateTime? value, DateTime day) {

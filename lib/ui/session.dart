@@ -8,9 +8,11 @@ import '../config/app_config.dart';
 import '../data/db/database.dart';
 import '../data/db/vault.dart';
 import '../data/db/gmail_message_index.dart';
+import '../data/events/day_label.dart';
 import '../data/events/event_repository.dart';
 import '../data/gmail/from_header.dart';
 import '../data/gmail/gmail_readonly.dart';
+import '../data/gmail/message_record.dart';
 import '../data/gmail/live_mailbox.dart';
 import '../data/gmail/sync_error.dart';
 import '../data/parser/proposal.dart' as school;
@@ -48,6 +50,7 @@ class AppSession extends ChangeNotifier {
   List<ProposalRecord> maybeCards = const [];
   List<Event> agenda = const [];
   List<Event> weekEvents = const [];
+  List<LedgerRow> weekLedger = const [];
   List<Event> openEvents = const [];
   List<LayoutSlot> tomorrowSlots = const [];
   List<AlarmSchedule> pendingAlarms = const [];
@@ -144,6 +147,7 @@ class AppSession extends ChangeNotifier {
         for (final event in agenda)
           if (event.startsAt != null) event,
       ];
+      weekLedger = await EventRepository(db).ledger();
       openEvents = [
         for (final event in agenda)
           if (event.startsAt == null) event,
@@ -435,6 +439,110 @@ class AppSession extends ChangeNotifier {
       ).decide(proposalId: id, status: ProposalStatus.unreviewed);
     });
     lastUndoProposalId = null;
+    await refreshFromVault();
+  }
+
+  Future<void> rescheduleEvent(String eventId, DateTime day) async {
+    final opened = vault;
+    if (opened == null) return;
+    await opened.use((db) async {
+      final event = await EventRepository(db).reschedule(
+        eventId: eventId,
+        startsAt: day,
+      );
+      final planner = await SettingsRepository(db).planner();
+      final plans = planner.forEvent(
+        startsAt: event.startsAt,
+        allDay: event.allDay,
+      );
+      await AlarmRepository(db).replaceForEvent(eventId: event.id, plans: plans);
+    });
+    await EventAlarms.reconcile(opened);
+    await refreshFromVault();
+  }
+
+  Future<void> loadSampleSchoolDay() async {
+    final opened = vault;
+    if (opened == null) {
+      log = 'Unlock the vault first.';
+      notifyListeners();
+      return;
+    }
+    try {
+      await opened.use((db) async {
+        await GmailMessageIndex(db).initialize();
+        await GmailMessageIndex(db).recordAndReconcile(
+          listedIds: const ['demo_hat', 'demo_bag'],
+          records: [
+            GmailMessageRecord(
+              id: 'demo_hat',
+              parseStatus: GmailParseStatus.parsed('dated_action'),
+            ),
+            GmailMessageRecord(
+              id: 'demo_bag',
+              parseStatus: GmailParseStatus.parsed('undated_action'),
+            ),
+          ],
+        );
+        final tomorrow = DateTime.now().add(const Duration(days: 1));
+        final day = DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
+        await ProposalRepository(db).persistUnreviewed(
+          AllowlistedCircular(
+            id: 'demo_hat',
+            from: AppConfig.allowlistedFrom,
+            subject: 'Circular',
+            messageDate: DateTime.now().toUtc(),
+            body: 'Please bring a hat tomorrow.',
+            proposal: school.Proposal(
+              type: school.ProposalType.datedAction,
+              from: AppConfig.allowlistedFrom,
+              date: day,
+              items: const [
+                school.ProposalItem(
+                  kind: school.ItemKind.bring,
+                  textRaw: 'Please bring a hat tomorrow.',
+                ),
+              ],
+            ),
+          ),
+        );
+        final event = await ProposalRepository(
+          db,
+        ).confirmAsEvent(proposalId: 'prop_demo_hat', startsAt: day);
+        await EventRepository(db).setNotes(
+          event.id,
+          movedFromNote(DateTime.now().subtract(const Duration(days: 2))),
+        );
+        final planner = await SettingsRepository(db).planner();
+        await AlarmRepository(db).replaceForEvent(
+          eventId: event.id,
+          plans: planner.forEvent(startsAt: day, allDay: true),
+        );
+        await ProposalRepository(db).persistUnreviewed(
+          AllowlistedCircular(
+            id: 'demo_bag',
+            from: AppConfig.allowlistedFrom,
+            subject: 'Circular',
+            messageDate: DateTime.now().toUtc(),
+            body: 'Bagless day. Snacks bag only. Leave the school bag at home.',
+            proposal: const school.Proposal(
+              type: school.ProposalType.undatedAction,
+              from: 'school',
+              items: [
+                school.ProposalItem(
+                  kind: school.ItemKind.bring,
+                  textRaw: 'Bagless day. Snacks bag only.',
+                ),
+              ],
+            ),
+          ),
+        );
+      });
+      await EventAlarms.reconcile(opened);
+      log = 'Sample school day loaded. Tomorrow and Sort have something on.';
+    } catch (error) {
+      log = 'Could not load sample: $error';
+    }
     await refreshFromVault();
   }
 

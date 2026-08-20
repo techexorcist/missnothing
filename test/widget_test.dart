@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:missnothing/data/db/database.dart';
 import 'package:missnothing/data/db/gmail_message_index.dart';
 import 'package:missnothing/data/events/event_repository.dart';
 import 'package:missnothing/ui/app.dart';
@@ -93,6 +94,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Reconnect Gmail'), findsWidgets);
     expect(find.textContaining('gmail.readonly'), findsOneWidget);
+  });
+
+  testWidgets('week ledger flags a moved date', (tester) async {
+    final now = DateTime(2026, 8, 20);
+    final event = Event(
+      id: 'e1',
+      title: 'Hat day',
+      startsAt: DateTime(2026, 8, 21),
+      allDay: true,
+      status: 'active',
+      notes: 'moved from Wed 19',
+      createdAt: now,
+      updatedAt: now,
+    );
+    final session = TestSession()
+      ..agenda = [event]
+      ..weekLedger = [
+        LedgerRow(
+          event: event,
+          headline: 'Please bring a hat.',
+          movedFrom: 'moved from Wed 19',
+        ),
+      ];
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+    expect(find.text('Please bring a hat'), findsOneWidget);
+    expect(find.text('moved from Wed 19'), findsOneWidget);
+    await tester.tap(find.text('Please bring a hat'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hat day'), findsWidgets);
+    expect(find.text('moved from Wed 19'), findsWidgets);
   });
 
   testWidgets('inbox notification opens Sort', (tester) async {

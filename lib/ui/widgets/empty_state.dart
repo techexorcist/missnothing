@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_theme.dart';
+import '../../theme/mn_tokens.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -16,25 +16,31 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = MnTokens.of(context);
     return Semantics(
       label: '$title. $message',
       child: Padding(
-        padding: const EdgeInsets.all(AppTokens.space * 1.5),
+        padding: EdgeInsets.all(tokens.space * 1.5),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 56, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: AppTokens.space),
+            Icon(icon, size: 56, color: tokens.brand),
+            SizedBox(height: tokens.space),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: TextStyle(
+                fontFamily: tokens.displayFamily,
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: tokens.ink,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: TextStyle(color: tokens.ink2),
             ),
           ],
         ),
