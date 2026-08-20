@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:missnothing/data/db/database.dart';
 import 'package:missnothing/data/db/gmail_message_index.dart';
+import 'package:missnothing/data/events/event_repository.dart';
 import 'package:missnothing/data/gmail/gmail_readonly.dart';
 import 'package:missnothing/data/gmail/message_record.dart';
 import 'package:missnothing/data/parser/proposal.dart' as school;
@@ -74,6 +75,18 @@ void main() {
     expect(stored?.row.status, ProposalStatus.confirmed);
     expect(stored?.row.subject, 'Hat day');
     expect((await db.select(db.events).get()).single.title, 'Hat day');
+  });
+
+  test('laid-out ticks persist on event items', () async {
+    await repo.persistUnreviewed(circular());
+    final event = await repo.confirmAsEvent(proposalId: 'prop_m1');
+    final events = EventRepository(db);
+    final day = event.startsAt ?? DateTime.utc(2026, 8, 21);
+    final slots = await events.slotsOn(day.toLocal());
+    expect(slots, isNotEmpty);
+    expect(slots.first.laidOut, isFalse);
+    await events.setLaidOut(slots.first.itemId, true);
+    expect((await events.slotsOn(day.toLocal())).first.laidOut, isTrue);
   });
 
   test('skipped proposals are sticky across reparses', () async {

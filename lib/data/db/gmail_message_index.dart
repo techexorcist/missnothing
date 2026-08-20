@@ -100,4 +100,25 @@ class GmailMessageIndex {
       byStatus: byStatus,
     );
   }
+
+  Future<({int couldntRead, int incomplete})> missCounts() async {
+    final byStatus = <String, int>{
+      for (final row
+          in await db
+              .customSelect(
+                'SELECT parse_status, COUNT(*) AS n FROM gmail_messages '
+                'GROUP BY parse_status;',
+              )
+              .get())
+        row.read<String>('parse_status'): row.read<int>('n'),
+    };
+    final couldntRead =
+        (byStatus[GmailParseStatus.nothingFound] ?? 0) +
+        (byStatus[GmailParseStatus.emptyBody] ?? 0) +
+        (byStatus[GmailParseStatus.fetchError] ?? 0);
+    return (
+      couldntRead: couldntRead,
+      incomplete: byStatus[GmailParseStatus.listed] ?? 0,
+    );
+  }
 }

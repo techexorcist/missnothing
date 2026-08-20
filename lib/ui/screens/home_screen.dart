@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../config/app_config.dart';
-import '../../theme/app_theme.dart';
+import '../../data/events/event_repository.dart';
+import '../../theme/mn_tokens.dart';
 import '../session.dart';
-import '../widgets/empty_state.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.session});
@@ -12,104 +12,228 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final email = session.user?.email;
-    final now = DateTime.now();
-    final today = session.agenda.where(
-      (event) => _sameDay(event.startsAt, now),
-    );
-    final tomorrow = session.agenda.where(
-      (event) => _sameDay(event.startsAt, now.add(const Duration(days: 1))),
-    );
-    return ListView(
-      padding: const EdgeInsets.all(AppTokens.space),
-      children: [
-        Text(
-          email == null ? 'Good to see you' : 'Monitoring $email',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(session.vaultLabel),
-        Text('Allowlist: ${AppConfig.allowlistedFrom}'),
-        Text(session.lastSyncLabel),
-        const SizedBox(height: AppTokens.space),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _StatChip(label: 'To review', value: '${session.reviewCount}'),
-            _StatChip(label: 'Events', value: '${session.eventCount}'),
-            _StatChip(label: 'Today', value: '${today.length}'),
-            _StatChip(label: 'Tomorrow', value: '${tomorrow.length}'),
+    final tokens = MnTokens.of(context);
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final slots = session.tomorrowSlots;
+    final out = slots.where((slot) => slot.laidOut || slot.leaveAtHome).length;
+    if (slots.isEmpty && session.reviewCount == 0) {
+      return _Kettle(
+        color: tokens.lime,
+        ink: tokens.ink,
+        title: 'Nothing\nto put out.',
+        sub: session.lastSyncLabel,
+      );
+    }
+    if (slots.isEmpty) {
+      return ListView(
+        padding: EdgeInsets.all(tokens.space),
+        children: [
+          Text(
+            '${session.reviewCount} LOOSE · FROM SCHOOL',
+            style: _kicker(tokens),
+          ),
+          const SizedBox(height: 8),
+          Text('Where do\nthese go?', style: _display(tokens, 32)),
+          const SizedBox(height: 20),
+          FilledButton(
+            onPressed: () => context.go('/review'),
+            child: const Text('SORT THEM'),
+          ),
+          if (session.couldntRead > 0) ...[
+            const SizedBox(height: 16),
+            Text(
+              'We got ${session.couldntRead}. Couldn\'t read.',
+              style: TextStyle(
+                color: tokens.actToday,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: AppTokens.space),
-        Semantics(
-          button: true,
-          label: 'Connect Gmail',
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: session.actionsOn ? session.connect : null,
-              child: const Text('Connect Gmail'),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Semantics(
-          button: true,
-          label: 'Sync school mail',
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: session.actionsOn ? session.sync : null,
-              child: const Text('Sync'),
-            ),
-          ),
-        ),
-        if (session.busy) ...[
-          const SizedBox(height: 12),
-          const LinearProgressIndicator(),
         ],
-        const SizedBox(height: AppTokens.space),
-        if (session.reviewCount == 0 && today.isEmpty && tomorrow.isEmpty)
-          const EmptyState(
-            icon: Icons.wb_sunny_outlined,
-            title: 'Nothing for today yet',
-            message:
-                'Connect Gmail and sync. Review cards will land here before '
-                'any reminder is kept.',
-          )
-        else
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppTokens.space),
-              child: Text(session.log),
-            ),
+      );
+    }
+    return ListView(
+      padding: EdgeInsets.all(tokens.space),
+      children: [
+        Text('TOMORROW · ${_shortDate(tomorrow)}', style: _kicker(tokens)),
+        const SizedBox(height: 8),
+        Text('Put it out\ntonight.', style: _display(tokens, 32)),
+        const SizedBox(height: 8),
+        Text(
+          '$out of ${slots.length} out',
+          style: _kicker(tokens).copyWith(color: tokens.actToday),
+        ),
+        const SizedBox(height: 16),
+        for (final slot in slots)
+          _SlotRow(slot: slot, onToggle: () => session.toggleLaidOut(slot)),
+        const SizedBox(height: 20),
+        TextButton(
+          onPressed: () => context.push('/kid'),
+          child: const Text('SHOW THE CHILD'),
+        ),
+        if (session.reviewCount > 0)
+          TextButton(
+            onPressed: () => context.go('/review'),
+            child: Text('${session.reviewCount} still to sort'),
           ),
       ],
     );
   }
 }
 
-bool _sameDay(DateTime? value, DateTime day) {
-  if (value == null) return false;
-  final local = value.toLocal();
-  return local.year == day.year &&
-      local.month == day.month &&
-      local.day == day.day;
-}
+class _Kettle extends StatelessWidget {
+  const _Kettle({
+    required this.color,
+    required this.ink,
+    required this.title,
+    required this.sub,
+  });
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.label, required this.value});
-
-  final String label;
-  final String value;
+  final Color color;
+  final Color ink;
+  final String title;
+  final String sub;
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text('$label · $value'),
-      visualDensity: VisualDensity.comfortable,
+    final tokens = MnTokens.of(context);
+    return ColoredBox(
+      color: color,
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(tokens.space * 1.5),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: tokens.displayFamily,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w700,
+                  height: 0.95,
+                  color: ink,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                sub.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  fontSize: 12,
+                  color: ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
+}
+
+class _SlotRow extends StatelessWidget {
+  const _SlotRow({required this.slot, required this.onToggle});
+
+  final LayoutSlot slot;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = MnTokens.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: slot.laidOut ? tokens.surface2 : tokens.canvas,
+        border: Border(
+          left: BorderSide(color: tokens.line, width: tokens.border),
+          right: BorderSide(color: tokens.line, width: tokens.border),
+          top: BorderSide(color: tokens.line, width: tokens.border),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Row(
+        children: [
+          Icon(_iconFor(slot.kind), size: 32, color: tokens.brand),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  slot.headline,
+                  style: TextStyle(
+                    fontFamily: tokens.displayFamily,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
+                  ),
+                ),
+                if (slot.subtitle.isNotEmpty || slot.leaveAtHome)
+                  Text(
+                    slot.leaveAtHome ? 'Leave it at home' : slot.subtitle,
+                    style: TextStyle(fontSize: 11, color: tokens.ink2),
+                  ),
+              ],
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: slot.laidOut ? 'Mark not out' : 'Mark laid out',
+            child: InkWell(
+              onTap: onToggle,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: slot.laidOut ? tokens.lime : tokens.canvas,
+                  border: Border.all(color: tokens.line, width: tokens.border),
+                ),
+                child: slot.laidOut
+                    ? Icon(Icons.check, size: 16, color: tokens.ink)
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+IconData _iconFor(String kind) {
+  return switch (kind) {
+    'dress' => Icons.checkroom,
+    'bring' => Icons.inventory_2_outlined,
+    'attend' => Icons.event_outlined,
+    'offer' => Icons.card_giftcard_outlined,
+    _ => Icons.notes,
+  };
+}
+
+TextStyle _kicker(MnTokens tokens) {
+  return TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 1.4,
+    color: tokens.ink2,
+  );
+}
+
+TextStyle _display(MnTokens tokens, double size) {
+  return TextStyle(
+    fontFamily: tokens.displayFamily,
+    fontSize: size,
+    fontWeight: FontWeight.w700,
+    height: 1.02,
+    letterSpacing: -0.6,
+    color: tokens.ink,
+  );
+}
+
+String _shortDate(DateTime day) {
+  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return '${names[day.weekday - 1]} ${day.day}';
 }

@@ -7,6 +7,7 @@ import 'package:googleapis/gmail/v1.dart';
 import '../config/app_config.dart';
 import '../data/db/database.dart';
 import '../data/db/vault.dart';
+import '../data/db/gmail_message_index.dart';
 import '../data/events/event_repository.dart';
 import '../data/gmail/from_header.dart';
 import '../data/gmail/gmail_readonly.dart';
@@ -22,6 +23,7 @@ import '../data/sources/source_repository.dart';
 import '../data/sync/account_sync.dart';
 import '../data/sync/background_sync.dart';
 import '../data/widgets/glance_state.dart';
+import 'text/display_sanitize.dart';
 
 class AppSession extends ChangeNotifier {
   GoogleSignInAccount? user;
@@ -41,8 +43,11 @@ class AppSession extends ChangeNotifier {
   String? lastUndoProposalId;
   List<ProposalRecord> inbox = const [];
   List<Event> agenda = const [];
+  List<LayoutSlot> tomorrowSlots = const [];
   List<SourceAllowlistEntry> allowlist = const [];
   List<AppAccount> accounts = const [];
+  int couldntRead = 0;
+  int syncIncomplete = 0;
 
   bool get actionsOn => signInReady && vaultReady && !busy;
 
@@ -111,10 +116,27 @@ class AppSession extends ChangeNotifier {
     await opened.use((db) async {
       inbox = await ProposalRepository(db).unreviewedRecords();
       agenda = await EventRepository(db).active();
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      tomorrowSlots = [
+        for (final slot in await EventRepository(db).slotsOn(tomorrow))
+          LayoutSlot(
+            itemId: slot.itemId,
+            eventId: slot.eventId,
+            headline: itemHeadline(slot.headline),
+            subtitle: displayText(slot.subtitle),
+            kind: slot.kind,
+            laidOut: slot.laidOut,
+            leaveAtHome:
+                looksBagless(slot.headline) || looksBagless(slot.subtitle),
+          ),
+      ];
       allowlist = await SourceRepository(db).allowlistRows();
       accounts = await db.select(db.appAccounts).get();
       reviewCount = inbox.length;
       eventCount = agenda.length;
+      final misses = await GmailMessageIndex(db).missCounts();
+      couldntRead = misses.couldntRead;
+      syncIncomplete = misses.incomplete;
       try {
         await GlanceState(db).publish();
       } catch (_) {}
@@ -252,6 +274,13 @@ class AppSession extends ChangeNotifier {
       busy = false;
       notifyListeners();
     }
+  }
+
+  Future<void> toggleLaidOut(LayoutSlot slot) async {
+    await vault?.use((db) {
+      return EventRepository(db).setLaidOut(slot.itemId, !slot.laidOut);
+    });
+    await refreshFromVault();
   }
 
   Future<void> confirmProposal(

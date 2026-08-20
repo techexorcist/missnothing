@@ -39,10 +39,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? 'Connect Gmail to watch a mailbox'
                 : '${session.accounts.length} mailbox(es) stored on this phone',
           ),
-          trailing: TextButton(
-            onPressed: session.actionsOn ? session.connect : null,
-            child: const Text('Add'),
-          ),
+        ),
+        FilledButton(
+          onPressed: session.actionsOn ? session.connect : null,
+          child: const Text('Connect Gmail'),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.tonal(
+          onPressed: session.actionsOn ? session.sync : null,
+          child: const Text('Sync'),
         ),
         const Divider(),
         Text('School sources', style: Theme.of(context).textTheme.titleMedium),

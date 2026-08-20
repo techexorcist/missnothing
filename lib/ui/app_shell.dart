@@ -22,13 +22,13 @@ class AppShell extends StatelessWidget {
     return ListenableBuilder(
       listenable: session,
       builder: (context, _) {
-        const titles = ['Home', 'Review', 'Agenda', 'Settings'];
+        const titles = ['Tomorrow', 'Sort', 'Term', 'Set'];
         final wide = MediaQuery.sizeOf(context).width >= 840;
         final destinations = [
           const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: Icon(Icons.wb_twilight_outlined),
+            selectedIcon: Icon(Icons.wb_twilight),
+            label: 'Tomorrow',
           ),
           NavigationDestination(
             icon: Badge(
@@ -37,17 +37,17 @@ class AppShell extends StatelessWidget {
               child: const Icon(Icons.style_outlined),
             ),
             selectedIcon: const Icon(Icons.style),
-            label: 'Review',
+            label: 'Sort',
           ),
           const NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
-            label: 'Agenda',
+            label: 'Term',
           ),
           const NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            label: 'Set',
           ),
         ];
         void go(int index) {
@@ -89,7 +89,9 @@ class AppShell extends StatelessWidget {
           );
         }
         return Scaffold(
-          appBar: AppBar(title: Text(titles[navigationShell.currentIndex])),
+          appBar: navigationShell.currentIndex == 0
+              ? null
+              : AppBar(title: Text(titles[navigationShell.currentIndex])),
           body: navigationShell,
           bottomNavigationBar: NavigationBar(
             selectedIndex: navigationShell.currentIndex,

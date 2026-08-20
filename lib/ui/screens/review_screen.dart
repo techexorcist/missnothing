@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../data/review/proposal_repository.dart';
-import '../../theme/app_theme.dart';
+import '../../theme/mn_tokens.dart';
 import '../session.dart';
+import '../text/display_sanitize.dart';
 import '../widgets/empty_state.dart';
 
 class ReviewScreen extends StatelessWidget {
@@ -12,76 +13,87 @@ class ReviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = MnTokens.of(context);
     if (session.inbox.isEmpty) {
       return Column(
         children: [
           if (session.lastUndoProposalId != null)
             TextButton(
               onPressed: session.undoSkip,
-              child: const Text('Undo last skip'),
+              child: const Text('Undo last bin'),
             ),
           const Expanded(
             child: EmptyState(
               icon: Icons.style_outlined,
-              title: 'No cards waiting',
+              title: 'Nothing loose',
               message:
-                  'Parsed circulars appear here as dated actions, undated asks, '
-                  'or decisions. Nothing is scheduled until you add it.',
+                  'Parsed circulars land here as objects to put out, leave '
+                  'for later, or bin. Nothing is scheduled until you place it.',
             ),
           ),
         ],
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppTokens.space),
-      itemCount: session.inbox.length,
-      itemBuilder: (context, index) {
-        final card = session.inbox[index];
-        return Dismissible(
-          key: ValueKey(card.row.id),
-          background: _swipeFill(
-            context,
-            Colors.green,
-            'Add',
-            Alignment.centerLeft,
+    return ListView(
+      padding: EdgeInsets.all(tokens.space),
+      children: [
+        Text(
+          '${session.inbox.length} LOOSE · FROM SCHOOL',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.4,
+            color: tokens.ink2,
           ),
-          secondaryBackground: _swipeFill(
-            context,
-            Colors.red.shade400,
-            'Skip',
-            Alignment.centerRight,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Where do\nthese go?',
+          style: TextStyle(
+            fontFamily: tokens.displayFamily,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            height: 1.05,
+            color: tokens.ink,
           ),
-          confirmDismiss: (direction) async {
-            if (direction == DismissDirection.startToEnd) {
-              await session.confirmProposal(card);
-            } else {
-              await session.skipProposal(card);
-            }
-            return false;
-          },
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _ReviewCard(session: session, card: card),
+        ),
+        const SizedBox(height: 16),
+        for (final card in session.inbox)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Dismissible(
+              key: ValueKey(card.row.id),
+              background: _swipeFill(
+                tokens.lime,
+                'PUT OUT',
+                Alignment.centerLeft,
+              ),
+              secondaryBackground: _swipeFill(
+                tokens.surface2,
+                'BIN',
+                Alignment.centerRight,
+              ),
+              confirmDismiss: (direction) async {
+                if (direction == DismissDirection.startToEnd) {
+                  await session.confirmProposal(card);
+                } else {
+                  await session.skipProposal(card);
+                }
+                return false;
+              },
+              child: _ReviewCard(session: session, card: card),
+            ),
           ),
-        );
-      },
+      ],
     );
   }
 
-  Widget _swipeFill(
-    BuildContext context,
-    Color color,
-    String label,
-    Alignment alignment,
-  ) {
+  Widget _swipeFill(Color color, String label, Alignment alignment) {
     return Container(
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppTokens.radius),
-      ),
-      child: Text(label, style: const TextStyle(color: Colors.white)),
+      color: color,
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -94,97 +106,95 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = MnTokens.of(context);
     final date = card.row.proposedDate;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppTokens.space),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final headline = card.items.isEmpty
+        ? displayText(card.row.subject)
+        : itemHeadline(card.items.first.textRaw);
+    final typeWord = switch (card.row.type) {
+      'undated_action' => 'NO DAY GIVEN',
+      'decision' => 'INTERESTED?',
+      _ => date == null ? 'ON A DAY' : 'ON A DAY · ${date.toLocal().day}',
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border.all(color: tokens.line, width: tokens.border),
+        boxShadow: [BoxShadow(color: tokens.line, offset: const Offset(5, 5))],
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Wrap(
-              spacing: 8,
-              children: [
-                Chip(label: Text(card.row.type.replaceAll('_', ' '))),
-                Chip(label: Text(card.row.urgency)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              card.row.subject,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            if (date != null) Text(date.toLocal().toString().split(' ').first),
-            if (card.row.location != null) Text(card.row.location!),
-            const SizedBox(height: 8),
-            for (final item in card.items) Text('• ${item.textRaw}'),
-            const SizedBox(height: 8),
-            Text(
-              card.row.evidence,
-              maxLines: 6,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: AppTokens.space),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton(
-                  onPressed: () => session.confirmProposal(card),
-                  child: const Text('Add'),
+            Container(width: 5, color: tokens.typeAccent(card.row.type)),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(tokens.space),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      typeWord,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1,
+                        color: tokens.typeAccent(card.row.type),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      headline,
+                      style: TextStyle(
+                        fontFamily: tokens.displayFamily,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    for (final item in card.items)
+                      Text(
+                        '• ${displayText(item.textRaw)}',
+                        style: TextStyle(fontSize: 13, color: tokens.ink2),
+                      ),
+                    const SizedBox(height: 8),
+                    Text(
+                      displayText(card.row.fromRaw),
+                      style: TextStyle(fontSize: 10, color: tokens.ink3),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => session.skipProposal(card),
+                            child: const Text('BIN'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => session.maybeProposal(card),
+                            child: const Text('LATER'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => session.confirmProposal(card),
+                            child: const Text('PUT OUT'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                FilledButton.tonal(
-                  onPressed: () => _edit(context),
-                  child: const Text('Edit'),
-                ),
-                OutlinedButton(
-                  onPressed: () => session.maybeProposal(card),
-                  child: const Text('Maybe'),
-                ),
-                TextButton(
-                  onPressed: () => session.skipProposal(card),
-                  child: const Text('Skip'),
-                ),
-              ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Future<void> _edit(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: card.row.proposedDate?.toLocal() ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (!context.mounted) return;
-    final controller = TextEditingController(text: card.row.location ?? '');
-    final location = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Location'),
-          content: TextField(controller: controller),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-    await session.confirmProposal(
-      card,
-      date: picked ?? card.row.proposedDate,
-      location: location ?? card.row.location,
     );
   }
 }

@@ -1,64 +1,76 @@
 import 'package:flutter/material.dart';
 
-abstract final class AppTokens {
-  static const amber = Color(0xFFB45309);
-  static const cream = Color(0xFFFFF8F1);
-  static const ink = Color(0xFF3F2A14);
-  static const radius = 20.0;
-  static const space = 16.0;
-}
+import 'mn_tokens.dart';
+export 'mn_tokens.dart';
 
 ThemeData buildLightTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: AppTokens.amber,
-    brightness: Brightness.light,
+  const tokens = MnTokens.light;
+  return _theme(
+    ColorScheme.fromSeed(seedColor: tokens.brand, brightness: Brightness.light),
+    tokens,
   );
-  return _theme(scheme, AppTokens.cream);
 }
 
 ThemeData buildDarkTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: AppTokens.amber,
-    brightness: Brightness.dark,
+  const tokens = MnTokens.dark;
+  return _theme(
+    ColorScheme.fromSeed(seedColor: tokens.brand, brightness: Brightness.dark),
+    tokens,
   );
-  return _theme(scheme, const Color(0xFF1C140C));
 }
 
-ThemeData _theme(ColorScheme scheme, Color scaffold) {
+ThemeData _theme(ColorScheme scheme, MnTokens tokens) {
+  final base =
+      (scheme.brightness == Brightness.dark
+              ? Typography.material2021().white
+              : Typography.material2021().black)
+          .apply(bodyColor: tokens.ink, displayColor: tokens.ink);
   return ThemeData(
     useMaterial3: true,
-    colorScheme: scheme,
-    scaffoldBackgroundColor: scaffold,
+    colorScheme: scheme.copyWith(
+      surface: tokens.surface,
+      onSurface: tokens.ink,
+      primary: tokens.brand,
+    ),
+    scaffoldBackgroundColor: tokens.canvas,
     visualDensity: VisualDensity.standard,
-    textTheme:
-        (scheme.brightness == Brightness.dark
-                ? Typography.material2021().white
-                : Typography.material2021().black)
-            .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+    textTheme: base,
+    extensions: [tokens],
     appBarTheme: AppBarTheme(
-      backgroundColor: scaffold,
-      foregroundColor: scheme.onSurface,
+      backgroundColor: tokens.canvas,
+      foregroundColor: tokens.ink,
       elevation: 0,
       centerTitle: false,
     ),
     cardTheme: CardThemeData(
-      color: scheme.surface,
+      color: tokens.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.radius),
+        side: BorderSide(color: tokens.line, width: tokens.border),
+        borderRadius: BorderRadius.circular(0),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: scheme.surface,
-      indicatorColor: scheme.secondaryContainer,
+      backgroundColor: tokens.canvas,
+      indicatorColor: tokens.lime,
       labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface),
+        TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          letterSpacing: 0.6,
+          color: tokens.ink,
+        ),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(88, 48),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: tokens.lime,
+        foregroundColor: tokens.ink,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: tokens.line, width: tokens.border),
+          borderRadius: BorderRadius.circular(0),
+        ),
       ),
     ),
   );

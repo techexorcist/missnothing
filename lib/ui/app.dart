@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import 'app_shell.dart';
 import 'screens/event_detail_screen.dart';
+import 'screens/kid_mode_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/unlock_screen.dart';
 import 'session.dart';
@@ -88,6 +89,10 @@ GoRouter _buildRouter(AppSession session) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => OnboardingScreen(session: session),
+      ),
+      GoRoute(
+        path: '/kid',
+        builder: (context, state) => KidModeScreen(session: session),
       ),
       GoRoute(
         path: '/event/:id',

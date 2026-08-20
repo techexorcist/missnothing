@@ -15,13 +15,12 @@ class TestSession extends AppSession {
 }
 
 void main() {
-  testWidgets('home shows connect and sync after vault skip', (tester) async {
+  testWidgets('tomorrow tab shows kettle when nothing is out', (tester) async {
     await tester.pumpWidget(MissNothingApp(session: TestSession()));
     await tester.pumpAndSettle();
-    expect(find.text('Connect Gmail'), findsOneWidget);
-    expect(find.text('Sync'), findsOneWidget);
-    expect(find.text('Home'), findsWidgets);
-    expect(find.text('Review'), findsWidgets);
+    expect(find.textContaining('Nothing'), findsOneWidget);
+    expect(find.text('Tomorrow'), findsWidgets);
+    expect(find.text('Sort'), findsWidgets);
   });
 
   testWidgets('navigation destinations are labeled for TalkBack', (
@@ -30,27 +29,25 @@ void main() {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(MissNothingApp(session: TestSession()));
     await tester.pumpAndSettle();
-    expect(find.text('Home'), findsWidgets);
-    expect(find.text('Review'), findsWidgets);
-    expect(find.text('Agenda'), findsWidgets);
-    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Tomorrow'), findsWidgets);
+    expect(find.text('Sort'), findsWidgets);
+    expect(find.text('Term'), findsWidgets);
+    expect(find.text('Set'), findsWidgets);
     handle.dispose();
   });
 
-  testWidgets('home and review update after session notifies', (tester) async {
+  testWidgets('home asks to sort when cards arrive', (tester) async {
     final session = TestSession();
     await tester.pumpWidget(MissNothingApp(session: session));
     await tester.pumpAndSettle();
-    expect(find.text('To review · 0'), findsOneWidget);
 
     session.reviewCount = 5;
-    session.lastSyncLabel = 'Last sync just now';
     session.notifyListeners();
     await tester.pump();
 
-    expect(find.text('To review · 5'), findsOneWidget);
+    expect(find.textContaining('5 LOOSE'), findsOneWidget);
+    expect(find.text('SORT THEM'), findsOneWidget);
     expect(find.text('5'), findsWidgets);
-    expect(find.text('Last sync just now'), findsOneWidget);
   });
 
   testWidgets('onboarding starts when the vault is new', (tester) async {
