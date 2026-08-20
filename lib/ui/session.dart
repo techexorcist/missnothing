@@ -407,9 +407,10 @@ class AppSession extends ChangeNotifier {
           startsAt: event.startsAt,
           allDay: event.allDay,
         );
-        await AlarmRepository(
+        final replaced = await AlarmRepository(
           db,
         ).replaceForEvent(eventId: event.id, plans: plans);
+        await EventAlarms.cancel(replaced.map((row) => row.notificationId));
       });
       await EventAlarms.reconcile(opened);
       log = 'Added to agenda. Reminders schedule after you confirm, not sync.';
@@ -462,20 +463,19 @@ class AppSession extends ChangeNotifier {
     final opened = vault;
     if (opened == null) return;
     await opened.use((db) async {
-      final event = await EventRepository(db).reschedule(
-        eventId: eventId,
-        startsAt: day,
-        location: location,
-      );
+      final event = await EventRepository(
+        db,
+      ).reschedule(eventId: eventId, startsAt: day, location: location);
       if (day != null) {
         final planner = await SettingsRepository(db).planner();
         final plans = planner.forEvent(
           startsAt: event.startsAt,
           allDay: event.allDay,
         );
-        await AlarmRepository(
+        final replaced = await AlarmRepository(
           db,
         ).replaceForEvent(eventId: event.id, plans: plans);
+        await EventAlarms.cancel(replaced.map((row) => row.notificationId));
       }
     });
     await EventAlarms.reconcile(opened);
@@ -535,10 +535,11 @@ class AppSession extends ChangeNotifier {
           movedFromNote(DateTime.now().subtract(const Duration(days: 2))),
         );
         final planner = await SettingsRepository(db).planner();
-        await AlarmRepository(db).replaceForEvent(
+        final replaced = await AlarmRepository(db).replaceForEvent(
           eventId: event.id,
           plans: planner.forEvent(startsAt: day, allDay: true),
         );
+        await EventAlarms.cancel(replaced.map((row) => row.notificationId));
         await ProposalRepository(db).persistUnreviewed(
           AllowlistedCircular(
             id: 'demo_bag',

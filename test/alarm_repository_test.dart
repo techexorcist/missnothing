@@ -69,32 +69,49 @@ void main() {
     expect(child.snoozeParentId, pending.first.id);
   });
 
-  test('replaceBriefings restocks event-less clocks and cap keeps them', () async {
+  test('replaceForEvent can run twice with the same fire times', () async {
     final event = await ProposalRepository(
       db,
     ).confirmAsEvent(proposalId: 'prop_m1');
     final repo = AlarmRepository(db);
-    final later = DateTime.now().toUtc().add(const Duration(days: 3));
-    await repo.replaceForEvent(
-      eventId: event.id,
-      plans: [
-        AlarmPlan(kind: AlarmKind.nightBefore, fireAt: later),
-        AlarmPlan(
-          kind: AlarmKind.morningOf,
-          fireAt: later.add(const Duration(hours: 10)),
-        ),
-      ],
+    final fireAt = DateTime.utc(2026, 8, 21, 20);
+    final plans = [AlarmPlan(kind: AlarmKind.nightBefore, fireAt: fireAt)];
+    await repo.replaceForEvent(eventId: event.id, plans: plans);
+    await repo.replaceForEvent(eventId: event.id, plans: plans);
+    final pending = await repo.pending();
+    expect(pending.where((row) => row.eventId == event.id).length, 1);
+    expect(
+      pending.single.id,
+      '${event.id}_${AlarmKind.nightBefore}_${fireAt.millisecondsSinceEpoch}',
     );
-    await repo.replaceBriefings(
-      const AlarmPlanner().briefings(
-        now: DateTime(2026, 8, 20, 5),
-        days: 2,
-      ),
-    );
-    final dropped = await repo.capPending(max: 4);
-    expect(dropped.every((row) => !AlarmKind.isBriefing(row.kind)), isTrue);
-    final left = await repo.pending();
-    expect(left.where((row) => AlarmKind.isBriefing(row.kind)).length, 4);
-    expect(left.every((row) => row.eventId == null), isTrue);
   });
+
+  test(
+    'replaceBriefings restocks event-less clocks and cap keeps them',
+    () async {
+      final event = await ProposalRepository(
+        db,
+      ).confirmAsEvent(proposalId: 'prop_m1');
+      final repo = AlarmRepository(db);
+      final later = DateTime.now().toUtc().add(const Duration(days: 3));
+      await repo.replaceForEvent(
+        eventId: event.id,
+        plans: [
+          AlarmPlan(kind: AlarmKind.nightBefore, fireAt: later),
+          AlarmPlan(
+            kind: AlarmKind.morningOf,
+            fireAt: later.add(const Duration(hours: 10)),
+          ),
+        ],
+      );
+      await repo.replaceBriefings(
+        const AlarmPlanner().briefings(now: DateTime(2026, 8, 20, 5), days: 2),
+      );
+      final dropped = await repo.capPending(max: 4);
+      expect(dropped.every((row) => !AlarmKind.isBriefing(row.kind)), isTrue);
+      final left = await repo.pending();
+      expect(left.where((row) => AlarmKind.isBriefing(row.kind)).length, 4);
+      expect(left.every((row) => row.eventId == null), isTrue);
+    },
+  );
 }

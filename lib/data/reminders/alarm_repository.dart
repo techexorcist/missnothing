@@ -21,21 +21,16 @@ class AlarmRepository {
     )..where((row) => row.eventId.equals(eventId))).get();
   }
 
-  Future<void> replaceForEvent({
+  /// Drops prior rows for [eventId] so a second write with the same
+  /// fire times does not collide on id.
+  Future<List<AlarmSchedule>> replaceForEvent({
     required String eventId,
     required List<AlarmPlan> plans,
   }) async {
     final existing = await forEvent(eventId);
-    if (existing.isNotEmpty) {
-      await (db.update(
-        db.alarmSchedules,
-      )..where((row) => row.eventId.equals(eventId))).write(
-        AlarmSchedulesCompanion(
-          status: const Value(AlarmStatus.cancelled),
-          updatedAt: Value(DateTime.now().toUtc()),
-        ),
-      );
-    }
+    await (db.delete(
+      db.alarmSchedules,
+    )..where((row) => row.eventId.equals(eventId))).go();
     var nextId = await _nextNotificationId();
     final now = DateTime.now().toUtc();
     for (final plan in plans) {
@@ -53,6 +48,7 @@ class AlarmRepository {
             ),
           );
     }
+    return existing;
   }
 
   Future<AlarmSchedule> snooze({
@@ -100,18 +96,21 @@ class AlarmRepository {
   }
 
   Future<List<AlarmSchedule>> replaceBriefings(List<AlarmPlan> plans) async {
-    final existing = await (db.select(db.alarmSchedules)..where(
-      (row) => row.kind.isIn([
-        AlarmKind.briefingEvening,
-        AlarmKind.briefingMorning,
-      ]),
-    )).get();
+    final existing =
+        await (db.select(db.alarmSchedules)..where(
+              (row) => row.kind.isIn([
+                AlarmKind.briefingEvening,
+                AlarmKind.briefingMorning,
+              ]),
+            ))
+            .get();
     await (db.delete(db.alarmSchedules)..where(
-      (row) => row.kind.isIn([
-        AlarmKind.briefingEvening,
-        AlarmKind.briefingMorning,
-      ]),
-    )).go();
+          (row) => row.kind.isIn([
+            AlarmKind.briefingEvening,
+            AlarmKind.briefingMorning,
+          ]),
+        ))
+        .go();
     var nextId = await _nextNotificationId();
     final now = DateTime.now().toUtc();
     for (final plan in plans) {
