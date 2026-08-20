@@ -93,7 +93,11 @@ class ProposalRepository {
 
   Future<List<Proposal>> unreviewed() {
     return (db.select(db.proposals)
-          ..where((row) => row.status.equals(ProposalStatus.unreviewed))
+          ..where(
+            (row) =>
+                row.status.equals(ProposalStatus.unreviewed) |
+                row.status.equals(ProposalStatus.maybe),
+          )
           ..orderBy([(row) => OrderingTerm.desc(row.updatedAt)]))
         .get();
   }

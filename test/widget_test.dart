@@ -37,6 +37,22 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('home and review update after session notifies', (tester) async {
+    final session = TestSession();
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+    expect(find.text('To review · 0'), findsOneWidget);
+
+    session.reviewCount = 5;
+    session.lastSyncLabel = 'Last sync just now';
+    session.notifyListeners();
+    await tester.pump();
+
+    expect(find.text('To review · 5'), findsOneWidget);
+    expect(find.text('5'), findsWidgets);
+    expect(find.text('Last sync just now'), findsOneWidget);
+  });
+
   testWidgets('onboarding starts when the vault is new', (tester) async {
     final session = TestSession()..onboardingDone = false;
     await tester.pumpWidget(MissNothingApp(session: session));
