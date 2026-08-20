@@ -174,6 +174,7 @@ void main() {
 
     expect(find.text(tomorrowStatement(session.tomorrowSlots)), findsOneWidget);
     expect(find.textContaining('1 of 2 out'), findsOneWidget);
+    expect(find.text('LEAVE HOME'), findsOneWidget);
     expect(find.text('STOP ASKING'), findsWidgets);
 
     await tester.tap(find.textContaining('still downloading'));

@@ -135,13 +135,35 @@ class _ReviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      typeWord,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.1,
-                        color: tokens.typeAccent(card.row.type),
+                    const SizedBox(height: 8),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: switch (card.row.type) {
+                          'decision' => tokens.decision,
+                          'undated_action' => tokens.canvas,
+                          _ => tokens.actToday,
+                        },
+                        border: Border.all(
+                          color: tokens.line,
+                          width: tokens.border,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        child: Text(
+                          typeWord,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                            color: card.row.type == 'decision'
+                                ? tokens.canvas
+                                : tokens.ink,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -155,11 +177,33 @@ class _ReviewCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    for (final item in card.items)
-                      Text(
-                        '• ${displayText(item.textRaw)}',
-                        style: TextStyle(fontSize: 13, color: tokens.ink2),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(color: tokens.brand, width: 3),
+                        ),
                       ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 11),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final item in card.items)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 2),
+                                child: Text(
+                                  displayText(item.textRaw),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.35,
+                                    color: tokens.ink2,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       displayText(card.row.fromRaw),
