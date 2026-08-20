@@ -368,12 +368,14 @@ class SchoolInPack implements RulePack {
       }
     }
 
-    final isDecision = _findAny(body, _opportunity) != null &&
+    final isDecision =
+        _findAny(body, _opportunity) != null &&
         dated.isEmpty &&
         items.isNotEmpty;
 
-    var finalItems =
-        (isDecision && items.length > 1) ? items.sublist(0, 1) : items;
+    var finalItems = (isDecision && items.length > 1)
+        ? items.sublist(0, 1)
+        : items;
 
     final loc = _extractLocation(body);
     if (loc != null) {
@@ -425,8 +427,9 @@ class SchoolInPack implements RulePack {
       date: date,
       allDay: date == null ? null : true,
       location: loc,
-      urgency:
-          _findAny(body, _scarcity) != null ? Urgency.actToday : Urgency.none,
+      urgency: _findAny(body, _scarcity) != null
+          ? Urgency.actToday
+          : Urgency.none,
       whenHint: _extractWhenHint(body),
       from: input.from,
       threadId: input.threadId,

@@ -57,9 +57,10 @@ int? _monthNumber(String word) {
   return null;
 }
 
-final String _monthAlt =
-    ([..._monthNames, ..._monthAbbr]..sort((a, b) => b.length - a.length))
-        .join('|');
+final String _monthAlt = ([
+  ..._monthNames,
+  ..._monthAbbr,
+]..sort((a, b) => b.length - a.length)).join('|');
 
 final List<RegExp> _refBlacklist = [
   RegExp(r'Cir\.?\s*No\.?\s*:?\s*\S+', caseSensitive: false),
@@ -128,8 +129,9 @@ List<DateCandidate> extractDateCandidates(String body, DateTime headerDate) {
     add(_withInferredYear(int.parse(m.group(2)!), month, header), m.group(0)!);
   }
 
-  for (final m in RegExp(r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b')
-      .allMatches(masked)) {
+  for (final m in RegExp(
+    r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b',
+  ).allMatches(masked)) {
     final day = int.parse(m.group(1)!);
     final month = int.parse(m.group(2)!);
     var year = int.parse(m.group(3)!);

@@ -11,10 +11,7 @@ void main() {
   });
 
   test('display-name plus angle-bracket mailbox matches the mailbox', () {
-    expect(
-      fromMatchesAllowlist('Vidya Niketan <$allow>', allow),
-      isTrue,
-    );
+    expect(fromMatchesAllowlist('Vidya Niketan <$allow>', allow), isTrue);
   });
 
   test('allowlisted string in display-name does not match', () {
@@ -29,15 +26,32 @@ void main() {
   });
 
   test('substring of a different mailbox does not match', () {
-    expect(
-      fromMatchesAllowlist('not$allow', allow),
-      isFalse,
-    );
+    expect(fromMatchesAllowlist('not$allow', allow), isFalse);
   });
 
   test('config allowlist is compared case-insensitively', () {
     expect(
       fromMatchesAllowlist(allow.toUpperCase(), AppConfig.allowlistedFrom),
+      isTrue,
+    );
+  });
+
+  test('exact domain entries match host and subdomains only', () {
+    final school = [AllowlistEntry.domain('vidyaniketanhebbal.org')];
+    expect(
+      matchesAllowlist('Teacher <office@vidyaniketanhebbal.org>', school),
+      isTrue,
+    );
+    expect(
+      matchesAllowlist('Preprimary <vns@mail.vidyaniketanhebbal.org>', school),
+      isTrue,
+    );
+    expect(
+      matchesAllowlist('Spoof <evil@not-vidyaniketanhebbal.org>', school),
+      isFalse,
+    );
+    expect(
+      matchesAllowlist('Public suffix <x@org>', [AllowlistEntry.domain('org')]),
       isTrue,
     );
   });

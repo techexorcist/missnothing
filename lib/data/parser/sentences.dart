@@ -27,11 +27,7 @@ List<Sentence> splitSentences(String body) {
       final leading = raw.length - raw.trimLeft().length;
       final trimmed = raw.trim();
       out.add(
-        Sentence(
-          start + leading,
-          start + leading + trimmed.length,
-          trimmed,
-        ),
+        Sentence(start + leading, start + leading + trimmed.length, trimmed),
       );
     }
   }
@@ -51,7 +47,8 @@ List<Sentence> splitSentences(String body) {
       while (j < body.length && (body[j] == ' ' || body[j] == '\t')) {
         j += 1;
       }
-      final boundary = j >= body.length ||
+      final boundary =
+          j >= body.length ||
           body[j] == '\n' ||
           (j > i + 1 && _isUpperOrDigit(body[j]));
       if (boundary) {

@@ -6,8 +6,10 @@ import 'package:http/http.dart' as http;
 
 import 'package:missnothing/config/app_config.dart';
 import 'package:missnothing/data/gmail/from_header.dart';
+import 'package:missnothing/data/gmail/incremental_sync.dart';
+import 'package:missnothing/data/gmail/live_mailbox.dart';
+import 'package:missnothing/data/gmail/message_record.dart';
 import 'package:missnothing/data/parser/html_normalize.dart';
-import 'package:missnothing/data/parser/packs/school_in.dart';
 import 'package:missnothing/data/parser/proposal.dart';
 
 class AllowlistedCircular {
@@ -31,11 +33,15 @@ class AllowlistedCircular {
 class AllowlistedFetch {
   const AllowlistedFetch({
     required this.notes,
+    required this.listedIds,
+    required this.records,
     this.hit,
   });
 
   final AllowlistedCircular? hit;
   final List<String> notes;
+  final List<String> listedIds;
+  final List<GmailMessageRecord> records;
 }
 
 GmailApi gmailApiForToken(String accessToken) {
@@ -51,101 +57,14 @@ GmailApi gmailApiForToken(String accessToken) {
   return GmailApi(authenticatedClient(http.Client(), credentials));
 }
 
-/// Fetch allowlisted mail (including Spam/Trash). Returns the newest message
-/// that parses as any type. Skip reasons are always logged so a parser miss
-/// is not mistaken for an empty inbox.
+/// Fetch allowlisted mail (including Spam/Trash) through the incremental
+/// engine. A missing history cursor forces a full list.
 Future<AllowlistedFetch> fetchAllowlistedCircular(GmailApi gmail) async {
-  final listed = await gmail.users.messages.list(
-    'me',
-    q: 'from:${AppConfig.allowlistedFrom} newer_than:30d',
-    includeSpamTrash: true,
-    maxResults: 25,
+  final result = await IncrementalSync(mailbox: LiveGmailMailbox(gmail)).run(
+    allowlist: [AllowlistEntry.mailbox(AppConfig.allowlistedFrom)],
+    query: 'from:${AppConfig.allowlistedFrom} newer_than:30d',
   );
-  final refs = listed.messages;
-  if (refs == null || refs.isEmpty) {
-    return const AllowlistedFetch(
-      notes: ['Gmail list returned no messages (Spam/Trash included).'],
-    );
-  }
-
-  final notes = <String>[];
-  for (final ref in refs) {
-    final id = ref.id;
-    if (id == null) {
-      notes.add('skip: message ref had no id');
-      continue;
-    }
-    final message = await gmail.users.messages.get(
-      'me',
-      id,
-      format: 'full',
-    );
-    final from = _header(message, 'From') ?? '';
-    if (!fromMatchesAllowlist(from, AppConfig.allowlistedFrom)) {
-      notes.add(
-        'skip $id: mailbox "${mailboxFromFromHeader(from)}" '
-        '!= ${AppConfig.allowlistedFrom} (From=$from)',
-      );
-      continue;
-    }
-    final subject = _header(message, 'Subject') ?? '(no subject)';
-    final body = extractMessageText(message);
-    if (body.trim().isEmpty) {
-      notes.add('skip $id: empty body after normalize ($subject)');
-      continue;
-    }
-    final parsed = parseSchoolIn(
-      ParseInput(
-        from: AppConfig.allowlistedFrom,
-        messageDate: _messageDate(message),
-        body: body,
-        subject: subject,
-        threadId: message.threadId,
-      ),
-    );
-    if (parsed == null) {
-      notes.add(
-        'skip $id: parser returned null — nothing-found, not a Gmail miss '
-        '($subject)',
-      );
-      continue;
-    }
-    notes.add(
-      'used $id type=${parsed.type.name} date=${parsed.date} '
-      '($subject)',
-    );
-    return AllowlistedFetch(
-      hit: AllowlistedCircular(
-        id: id,
-        from: from,
-        subject: subject,
-        messageDate: parsed.date ?? _messageDate(message),
-        body: body,
-        proposal: parsed,
-      ),
-      notes: notes,
-    );
-  }
-  return AllowlistedFetch(notes: notes);
-}
-
-DateTime _messageDate(Message message) {
-  final internal = message.internalDate;
-  if (internal != null) {
-    return DateTime.fromMillisecondsSinceEpoch(int.parse(internal));
-  }
-  return DateTime.now();
-}
-
-String? _header(Message message, String name) {
-  final headers = message.payload?.headers;
-  if (headers == null) return null;
-  for (final h in headers) {
-    if (h.name != null && h.name!.toLowerCase() == name.toLowerCase()) {
-      return h.value;
-    }
-  }
-  return null;
+  return result.toAllowlistedFetch();
 }
 
 String extractMessageText(Message message) {

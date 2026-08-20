@@ -4,14 +4,7 @@ enum ItemKind { dress, bring, attend, offer, other }
 
 enum Urgency { none, actToday }
 
-enum WhenHint {
-  dispersal,
-  pickup,
-  homeTime,
-  assembly,
-  lunch,
-  beforeSchool,
-}
+enum WhenHint { dispersal, pickup, homeTime, assembly, lunch, beforeSchool }
 
 class ProposalItem {
   const ProposalItem({

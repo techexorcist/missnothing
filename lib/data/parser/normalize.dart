@@ -22,12 +22,15 @@ const Map<String, String> _entities = {
 };
 
 final RegExp _tag = RegExp(r'<[^>]+>');
-final RegExp _blockEnd =
-    RegExp(r'</(p|div|tr|li|h[1-6])>', caseSensitive: false);
+final RegExp _blockEnd = RegExp(
+  r'</(p|div|tr|li|h[1-6])>',
+  caseSensitive: false,
+);
 final RegExp _br = RegExp(r'<br\s*/?>', caseSensitive: false);
 final RegExp _numericEntity = RegExp(r'&#(\d+);');
-final RegExp _horizontalSpace =
-    RegExp('[ \t\u00a0\u2000-\u200a\u202f\u205f\u3000]+');
+final RegExp _horizontalSpace = RegExp(
+  '[ \t\u00a0\u2000-\u200a\u202f\u205f\u3000]+',
+);
 final RegExp _blankLines = RegExp(r'\n{2,}');
 
 String normalizeBody(String input) {

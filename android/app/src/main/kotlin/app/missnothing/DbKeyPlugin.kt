@@ -1,8 +1,11 @@
 package app.missnothing
 
+import android.app.KeyguardManager
+import android.content.Context
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.security.keystore.UserNotAuthenticatedException
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -29,11 +32,11 @@ class DbKeyPlugin(
     companion object {
         const val CHANNEL = "app.missnothing/db_key"
         private const val ALIAS = "missnothing_sqlcipher_v1"
+        private const val ALIAS_BG = "missnothing_sqlcipher_bg"
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val IV_LEN = 12
         private const val KEY_LEN = 32
-        private const val AUTH = BIOMETRIC_STRONG or DEVICE_CREDENTIAL
 
         fun register(
             activity: FragmentActivity,
@@ -47,15 +50,29 @@ class DbKeyPlugin(
     private val blobFile: File
         get() = File(activity.filesDir, "sqlcipher_key.enc")
 
+    private val backgroundBlobFile: File
+        get() = File(activity.filesDir, "sqlcipher_key_bg.enc")
+
     override fun onMethodCall(
         call: MethodCall,
         result: MethodChannel.Result,
     ) {
-        if (call.method != "unlock") {
-            result.notImplemented()
-            return
+        when (call.method) {
+            "isDeviceUnlocked" -> {
+                val km =
+                    activity.getSystemService(Context.KEYGUARD_SERVICE)
+                        as KeyguardManager
+                result.success(!km.isDeviceLocked)
+            }
+            "unlockBackground" -> unlockBackground(result)
+            "unlock" -> unlockInteractive(result)
+            else -> result.notImplemented()
         }
-        val can = BiometricManager.from(activity).canAuthenticate(AUTH)
+    }
+
+    private fun unlockInteractive(result: MethodChannel.Result) {
+        val authenticators = availablePromptAuthenticators()
+        val can = BiometricManager.from(activity).canAuthenticate(authenticators)
         if (can != BiometricManager.BIOMETRIC_SUCCESS) {
             result.error(
                 "no_lock",
@@ -94,7 +111,7 @@ class DbKeyPlugin(
                 .setKeySize(256)
                 .setUserAuthenticationRequired(true)
         if (Build.VERSION.SDK_INT >= 30) {
-            builder.setUserAuthenticationParameters(0, AUTH)
+            builder.setUserAuthenticationParameters(0, availableKeyAuthenticators())
         } else {
             @Suppress("DEPRECATION")
             builder.setUserAuthenticationValidityDurationSeconds(-1)
@@ -103,9 +120,9 @@ class DbKeyPlugin(
         gen.generateKey()
     }
 
-    private fun secretKey(): SecretKey {
+    private fun secretKey(alias: String = ALIAS): SecretKey {
         val ks = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        return (ks.getEntry(ALIAS, null) as KeyStore.SecretKeyEntry).secretKey
+        return (ks.getEntry(alias, null) as KeyStore.SecretKeyEntry).secretKey
     }
 
     private fun encryptNewKey(result: MethodChannel.Result) {
@@ -116,7 +133,9 @@ class DbKeyPlugin(
         authenticate(cipher, result) { c ->
             val packed = c.iv + c.doFinal(raw)
             blobFile.writeBytes(packed)
-            raw.toHex()
+            val hex = raw.toHex()
+            persistBackgroundCopy(hex)
+            hex
         }
     }
 
@@ -135,8 +154,88 @@ class DbKeyPlugin(
             GCMParameterSpec(128, iv),
         )
         authenticate(cipher, result) { c ->
-            c.doFinal(ct).toHex()
+            val hex = c.doFinal(ct).toHex()
+            persistBackgroundCopy(hex)
+            hex
         }
+    }
+
+    private fun persistBackgroundCopy(hex: String) {
+        ensureBackgroundKey()
+        val raw = hex.hexToBytes()
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey(ALIAS_BG))
+        val packed = cipher.iv + cipher.doFinal(raw)
+        backgroundBlobFile.writeBytes(packed)
+    }
+
+    private fun unlockBackground(result: MethodChannel.Result) {
+        val km =
+            activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (km.isDeviceLocked) {
+            result.error(
+                "device_locked",
+                "Unlock the phone once after reboot before background sync.",
+                null,
+            )
+            return
+        }
+        if (!backgroundBlobFile.exists()) {
+            result.error(
+                "no_background_key",
+                "Open MissNothing once so a device-unlocked copy can be stored.",
+                null,
+            )
+            return
+        }
+        try {
+            ensureBackgroundKey()
+            val blob = backgroundBlobFile.readBytes()
+            if (blob.size <= IV_LEN) {
+                result.error("corrupt", "Background key blob is too short.", null)
+                return
+            }
+            val iv = blob.copyOfRange(0, IV_LEN)
+            val ct = blob.copyOfRange(IV_LEN, blob.size)
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(
+                Cipher.DECRYPT_MODE,
+                secretKey(ALIAS_BG),
+                GCMParameterSpec(128, iv),
+            )
+            result.success(cipher.doFinal(ct).toHex())
+        } catch (_: UserNotAuthenticatedException) {
+            result.error(
+                "device_locked",
+                "Unlock the phone once after reboot before background sync.",
+                null,
+            )
+        } catch (e: Exception) {
+            result.error("keystore", e.message, null)
+        }
+    }
+
+    private fun ensureBackgroundKey() {
+        val ks = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        if (ks.containsAlias(ALIAS_BG)) return
+        val gen =
+            KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                ANDROID_KEYSTORE,
+            )
+        val builder =
+            KeyGenParameterSpec.Builder(
+                ALIAS_BG,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+            ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .setUserAuthenticationRequired(false)
+        if (Build.VERSION.SDK_INT >= 28) {
+            builder.setUnlockedDeviceRequired(true)
+        }
+        gen.init(builder.build())
+        gen.generateKey()
     }
 
     private fun authenticate(
@@ -194,10 +293,46 @@ class DbKeyPlugin(
             BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Unlock MissNothing")
                 .setSubtitle("The alarm database key stays in this device’s Keystore.")
-                .setAllowedAuthenticators(AUTH)
+                .setAllowedAuthenticators(availablePromptAuthenticators())
                 .build()
         prompt.authenticate(info, BiometricPrompt.CryptoObject(cipher))
     }
 
+    /// Requiring BIOMETRIC_STRONG while no fingerprint/face is enrolled makes
+    /// Android Keystore reject key generation, even when a valid PIN exists.
+    /// Use device credential alone in that case; real devices with enrolled
+    /// strong biometrics retain biometric-or-PIN unlock.
+    private fun hasStrongBiometric(): Boolean {
+        val biometric = BiometricManager.from(activity)
+        return biometric.canAuthenticate(BIOMETRIC_STRONG) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    /// Constants consumed by androidx.biometric.BiometricPrompt.
+    private fun availablePromptAuthenticators(): Int {
+        return if (hasStrongBiometric()) {
+            BIOMETRIC_STRONG or DEVICE_CREDENTIAL
+        } else {
+            DEVICE_CREDENTIAL
+        }
+    }
+
+    /// Keystore has a separate constants namespace from BiometricPrompt.
+    private fun availableKeyAuthenticators(): Int {
+        return if (hasStrongBiometric()) {
+            KeyProperties.AUTH_BIOMETRIC_STRONG or
+                KeyProperties.AUTH_DEVICE_CREDENTIAL
+        } else {
+            KeyProperties.AUTH_DEVICE_CREDENTIAL
+        }
+    }
+
     private fun ByteArray.toHex(): String = joinToString("") { b -> "%02x".format(b) }
+
+    private fun String.hexToBytes(): ByteArray {
+        check(length % 2 == 0) { "Hex key must have even length." }
+        return ByteArray(length / 2) { i ->
+            substring(i * 2, i * 2 + 2).toInt(16).toByte()
+        }
+    }
 }

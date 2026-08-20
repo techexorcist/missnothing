@@ -9,7 +9,7 @@ abstract class RulePack {
 
 class PackRegistry {
   PackRegistry(Iterable<RulePack> packs)
-      : _byId = {for (final p in packs) p.id: p};
+    : _byId = {for (final p in packs) p.id: p};
 
   final Map<String, RulePack> _byId;
 

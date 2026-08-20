@@ -37,9 +37,16 @@ void main() {
       expect(parsed.allDay, isTrue);
 
       final kinds = parsed.items.map((i) => i.kind).toSet();
-      expect(kinds.contains(ItemKind.dress), isTrue, reason: 'detection: dress');
-      expect(kinds.contains(ItemKind.bring), isTrue,
-          reason: 'detection: bagless/bring');
+      expect(
+        kinds.contains(ItemKind.dress),
+        isTrue,
+        reason: 'detection: dress',
+      );
+      expect(
+        kinds.contains(ItemKind.bring),
+        isTrue,
+        reason: 'detection: bagless/bring',
+      );
       expect(parsed.items.length, 2);
 
       for (final item in parsed.items) {
@@ -70,8 +77,11 @@ void main() {
           body: gold02Body,
         ),
       );
-      expect(parsed, isNotNull,
-          reason: 'must not dump gold-02 into nothing-found');
+      expect(
+        parsed,
+        isNotNull,
+        reason: 'must not dump gold-02 into nothing-found',
+      );
       expect(parsed!.type, ProposalType.decision);
       expect(parsed.date, isNull);
       expect(parsed.allDay, isNull);
