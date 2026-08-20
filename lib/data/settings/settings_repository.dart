@@ -1,9 +1,11 @@
 import 'package:missnothing/data/db/database.dart';
+import 'package:missnothing/data/reminders/alarm_planner.dart';
 
 abstract final class SettingKey {
   static const onboardingDone = 'onboarding_done';
   static const nightBeforeHour = 'night_before_hour';
   static const morningOfHour = 'morning_of_hour';
+  static const morningOfMinute = 'morning_of_minute';
   static const retentionDays = 'body_retention_days';
   static const nagMutedIds = 'nag_muted_item_ids';
 }
@@ -40,5 +42,18 @@ class SettingsRepository {
 
   Future<int> hour(String key, int fallback) async {
     return int.tryParse(await get(key) ?? '') ?? fallback;
+  }
+
+  Future<AlarmPlanner> planner() async {
+    return AlarmPlanner(
+      nightBefore: ClockTime(
+        await hour(SettingKey.nightBeforeHour, SchoolClocks.putOut.hour),
+        SchoolClocks.putOut.minute,
+      ),
+      morningOf: ClockTime(
+        await hour(SettingKey.morningOfHour, SchoolClocks.needBy.hour),
+        await hour(SettingKey.morningOfMinute, SchoolClocks.needBy.minute),
+      ),
+    );
   }
 }

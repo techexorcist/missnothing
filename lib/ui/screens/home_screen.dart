@@ -333,8 +333,10 @@ class _AlarmToggle extends StatelessWidget {
     final hh = local.hour.toString().padLeft(2, '0');
     final mm = local.minute.toString().padLeft(2, '0');
     final label = switch (alarm.kind) {
-      AlarmKind.nightBefore => '$hh:$mm Put it out',
-      AlarmKind.morningOf => '$hh:$mm Still not out',
+      AlarmKind.nightBefore || AlarmKind.briefingEvening =>
+        '$hh:$mm Put it out',
+      AlarmKind.morningOf => '$hh:$mm Need-by',
+      AlarmKind.briefingMorning => "$hh:$mm Today's check",
       _ => '$hh:$mm ${alarm.kind.replaceAll('_', ' ')}',
     };
     return SwitchListTile(

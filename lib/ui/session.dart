@@ -375,16 +375,11 @@ class AppSession extends ChangeNotifier {
           startsAt: date ?? card.row.proposedDate,
           location: location ?? card.row.location,
         );
-        final night = await SettingsRepository(
-          db,
-        ).hour(SettingKey.nightBeforeHour, 20);
-        final morning = await SettingsRepository(
-          db,
-        ).hour(SettingKey.morningOfHour, 7);
-        final plans = AlarmPlanner(
-          nightBefore: ClockTime(night, 0),
-          morningOf: ClockTime(morning, 0),
-        ).forEvent(startsAt: event.startsAt, allDay: event.allDay);
+        final planner = await SettingsRepository(db).planner();
+        final plans = planner.forEvent(
+          startsAt: event.startsAt,
+          allDay: event.allDay,
+        );
         await AlarmRepository(
           db,
         ).replaceForEvent(eventId: event.id, plans: plans);
@@ -476,8 +471,24 @@ class AppSession extends ChangeNotifier {
     await refreshFromVault();
   }
 
-  Future<void> setAlarmHour(String key, int hour) async {
-    await vault?.use((db) => SettingsRepository(db).set(key, '$hour'));
+  Future<void> restoreSchoolClocks() async {
+    await vault?.use((db) async {
+      final settings = SettingsRepository(db);
+      await settings.set(
+        SettingKey.nightBeforeHour,
+        '${SchoolClocks.putOut.hour}',
+      );
+      await settings.set(
+        SettingKey.morningOfHour,
+        '${SchoolClocks.needBy.hour}',
+      );
+      await settings.set(
+        SettingKey.morningOfMinute,
+        '${SchoolClocks.needBy.minute}',
+      );
+    });
+    log = 'Reminders: 20:00 put-out, 06:15 check, 06:30 need-by.';
+    notifyListeners();
   }
 
   Future<void> scheduleSmokeAlarms() async {
@@ -540,6 +551,8 @@ class AppSession extends ChangeNotifier {
       markEventDone(payload!.eventId!);
     } else if (response.actionId == 'snooze' && payload?.alarmId != null) {
       snoozeAlarm(payload!.alarmId!);
+    } else if (payload?.kind == AlarmKind.briefingMorning) {
+      sync();
     }
     notifyListeners();
   }

@@ -68,4 +68,33 @@ void main() {
     expect(child.kind, AlarmKind.snooze);
     expect(child.snoozeParentId, pending.first.id);
   });
+
+  test('replaceBriefings restocks event-less clocks and cap keeps them', () async {
+    final event = await ProposalRepository(
+      db,
+    ).confirmAsEvent(proposalId: 'prop_m1');
+    final repo = AlarmRepository(db);
+    final later = DateTime.now().toUtc().add(const Duration(days: 3));
+    await repo.replaceForEvent(
+      eventId: event.id,
+      plans: [
+        AlarmPlan(kind: AlarmKind.nightBefore, fireAt: later),
+        AlarmPlan(
+          kind: AlarmKind.morningOf,
+          fireAt: later.add(const Duration(hours: 10)),
+        ),
+      ],
+    );
+    await repo.replaceBriefings(
+      const AlarmPlanner().briefings(
+        now: DateTime(2026, 8, 20, 5),
+        days: 2,
+      ),
+    );
+    final dropped = await repo.capPending(max: 4);
+    expect(dropped.every((row) => !AlarmKind.isBriefing(row.kind)), isTrue);
+    final left = await repo.pending();
+    expect(left.where((row) => AlarmKind.isBriefing(row.kind)).length, 4);
+    expect(left.every((row) => row.eventId == null), isTrue);
+  });
 }

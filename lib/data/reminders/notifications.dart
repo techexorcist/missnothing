@@ -7,11 +7,15 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../db/database.dart';
 import '../db/vault.dart';
+import '../events/event_repository.dart';
+import '../settings/settings_repository.dart';
 import 'alarm_planner.dart';
 import 'alarm_repository.dart';
 
 const alarmChannelId = 'missnothing_alarms';
 const alarmChannelName = 'School reminders';
+const needByChannelId = 'missnothing_need_by';
+const needByChannelName = 'Need-by';
 
 final notificationPlugin = FlutterLocalNotificationsPlugin();
 
@@ -48,10 +52,11 @@ Future<void> initNotifications({
 void notificationTapBackground(NotificationResponse response) {}
 
 class NotificationPayload {
-  const NotificationPayload({this.eventId, this.alarmId});
+  const NotificationPayload({this.eventId, this.alarmId, this.kind});
 
   final String? eventId;
   final String? alarmId;
+  final String? kind;
 
   static NotificationPayload? parse(String? raw) {
     if (raw == null || raw.isEmpty) return null;
@@ -60,13 +65,15 @@ class NotificationPayload {
       return NotificationPayload(
         eventId: json['eventId'] as String?,
         alarmId: json['alarmId'] as String?,
+        kind: json['kind'] as String?,
       );
     } catch (_) {
       return NotificationPayload(eventId: raw);
     }
   }
 
-  String encode() => jsonEncode({'eventId': eventId, 'alarmId': alarmId});
+  String encode() =>
+      jsonEncode({'eventId': eventId, 'alarmId': alarmId, 'kind': kind});
 }
 
 class EventAlarms {
@@ -74,20 +81,49 @@ class EventAlarms {
     try {
       await initNotifications();
       await vault.use((db) async {
-        final pending = await AlarmRepository(db).pending();
+        final planner = await SettingsRepository(db).planner();
+        final repo = AlarmRepository(db);
+        final replaced = await repo.replaceBriefings(planner.briefings());
+        final dropped = await repo.capPending(max: planner.pendingCap);
+        for (final row in replaced) {
+          await cancel([row.notificationId]);
+        }
+        for (final row in dropped) {
+          await cancel([row.notificationId]);
+        }
+        final pending = await repo.pending();
         for (final row in pending) {
           await scheduleRow(
             row,
-            title: switch (row.kind) {
-              AlarmKind.nightBefore => 'Put it out for tomorrow',
-              AlarmKind.morningOf => 'Still not out',
-              _ => 'MissNothing',
-            },
-            body: 'School reminder',
+            title: titleFor(row.kind),
+            body: await bodyFor(db, row),
           );
         }
       });
     } catch (_) {}
+  }
+
+  static String titleFor(String kind) {
+    return switch (kind) {
+      AlarmKind.nightBefore || AlarmKind.briefingEvening =>
+        'Put it out for tomorrow',
+      AlarmKind.morningOf => 'Need-by',
+      AlarmKind.briefingMorning => "Today's check",
+      _ => 'MissNothing',
+    };
+  }
+
+  static Future<String> bodyFor(AppDatabase db, AlarmSchedule row) async {
+    if (row.kind == AlarmKind.briefingMorning) {
+      return 'Tap to sync and see anything that arrived overnight';
+    }
+    if (row.eventId == null) {
+      return 'Check what needs to go out';
+    }
+    final record = await EventRepository(db).byId(row.eventId!);
+    if (record == null) return 'School reminder';
+    if (record.items.isEmpty) return record.event.title;
+    return [for (final item in record.items) item.content].join(' · ');
   }
 
   static Future<void> scheduleRow(
@@ -98,13 +134,8 @@ class EventAlarms {
     await initNotifications();
     final when = tz.TZDateTime.from(row.fireAt.toLocal(), tz.local);
     if (when.isBefore(tz.TZDateTime.now(tz.local))) return;
-    final resolvedTitle =
-        title ??
-        switch (row.kind) {
-          AlarmKind.nightBefore => 'Put it out for tomorrow',
-          AlarmKind.morningOf => 'Still not out',
-          _ => 'MissNothing',
-        };
+    final resolvedTitle = title ?? titleFor(row.kind);
+    final needBy = row.kind == AlarmKind.morningOf;
     await notificationPlugin.zonedSchedule(
       row.notificationId,
       resolvedTitle,
@@ -112,11 +143,15 @@ class EventAlarms {
       when,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          alarmChannelId,
-          alarmChannelName,
-          channelDescription: 'Night-before and morning-of school reminders',
+          needBy ? needByChannelId : alarmChannelId,
+          needBy ? needByChannelName : alarmChannelName,
+          channelDescription: needBy
+              ? 'Time Sensitive need-by — the alarm that matters'
+              : 'Night-before and morning-of school reminders',
           importance: Importance.max,
           priority: Priority.max,
+          category: AndroidNotificationCategory.alarm,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
           actions: const [
             AndroidNotificationAction('done', 'Done'),
             AndroidNotificationAction('snooze', 'Snooze 15m'),
@@ -128,6 +163,7 @@ class EventAlarms {
       payload: NotificationPayload(
         eventId: row.eventId,
         alarmId: row.id,
+        kind: row.kind,
       ).encode(),
     );
   }

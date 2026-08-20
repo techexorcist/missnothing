@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_theme.dart';
+import '../../theme/mn_tokens.dart';
 import '../session.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -25,8 +25,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.lock_rounded,
       title: 'Mail stays on this phone',
       body:
-          'Bodies, attachments, and events live in an encrypted vault. The '
-          'cloud broker holds only a refresh token, never the mail.',
+          'Bodies, attachments, and events live in an encrypted vault on '
+          'this phone. There is no server. Nothing leaves the device.',
     ),
     (
       icon: Icons.notifications_active_outlined,
@@ -42,10 +42,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final page = _pages[_index];
+    final tokens = MnTokens.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppTokens.space * 1.5),
+          padding: EdgeInsets.all(tokens.space * 1.5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -55,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 size: 72,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(height: AppTokens.space),
+              SizedBox(height: tokens.space),
               Text(
                 page.title,
                 textAlign: TextAlign.center,

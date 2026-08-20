@@ -99,6 +99,53 @@ class AlarmRepository {
     );
   }
 
+  Future<List<AlarmSchedule>> replaceBriefings(List<AlarmPlan> plans) async {
+    final existing = await (db.select(db.alarmSchedules)..where(
+      (row) => row.kind.isIn([
+        AlarmKind.briefingEvening,
+        AlarmKind.briefingMorning,
+      ]),
+    )).get();
+    await (db.delete(db.alarmSchedules)..where(
+      (row) => row.kind.isIn([
+        AlarmKind.briefingEvening,
+        AlarmKind.briefingMorning,
+      ]),
+    )).go();
+    var nextId = await _nextNotificationId();
+    final now = DateTime.now().toUtc();
+    for (final plan in plans) {
+      await db
+          .into(db.alarmSchedules)
+          .insert(
+            AlarmSchedulesCompanion.insert(
+              id: 'briefing_${plan.kind}_${plan.fireAt.millisecondsSinceEpoch}',
+              kind: plan.kind,
+              fireAt: plan.fireAt,
+              notificationId: nextId++,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+    }
+    return existing;
+  }
+
+  /// Event alarms yield first so the two briefings never drain.
+  Future<List<AlarmSchedule>> capPending({int max = 64}) async {
+    final rows = await pending();
+    if (rows.length <= max) return const [];
+    final overflow = rows.length - max;
+    final drop = [
+      for (final row in rows.reversed)
+        if (!AlarmKind.isBriefing(row.kind)) row,
+    ].take(overflow).toList();
+    for (final row in drop) {
+      await setArmed(row.id, armed: false);
+    }
+    return drop;
+  }
+
   Future<void> markDoneForEvent(String eventId) async {
     await (db.update(
       db.alarmSchedules,

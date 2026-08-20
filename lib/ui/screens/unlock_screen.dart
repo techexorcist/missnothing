@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_theme.dart';
+import '../../theme/mn_tokens.dart';
 import '../session.dart';
 
 class UnlockScreen extends StatelessWidget {
@@ -10,10 +10,11 @@ class UnlockScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = MnTokens.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppTokens.space * 1.5),
+          padding: EdgeInsets.all(tokens.space * 1.5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -23,7 +24,7 @@ class UnlockScreen extends StatelessWidget {
                 size: 72,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(height: AppTokens.space),
+              SizedBox(height: tokens.space),
               Text(
                 'MissNothing',
                 textAlign: TextAlign.center,
@@ -38,7 +39,7 @@ class UnlockScreen extends StatelessWidget {
               ),
               const Spacer(),
               Text(session.vaultLabel, textAlign: TextAlign.center),
-              const SizedBox(height: AppTokens.space),
+              SizedBox(height: tokens.space),
               FilledButton(
                 onPressed: session.busy ? null : session.unlockVaultInteractive,
                 child: const Text('Unlock vault'),

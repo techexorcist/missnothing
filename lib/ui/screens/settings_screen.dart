@@ -2,8 +2,7 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 
 import '../../config/app_config.dart';
-import '../../data/settings/settings_repository.dart';
-import '../../theme/app_theme.dart';
+import '../../theme/mn_tokens.dart';
 import '../session.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -27,8 +26,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
+    final tokens = MnTokens.of(context);
     return ListView(
-      padding: const EdgeInsets.all(AppTokens.space),
+      padding: EdgeInsets.all(tokens.space),
       children: [
         Text('Accounts', style: Theme.of(context).textTheme.titleMedium),
         ListTile(
@@ -73,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _allowlist.clear();
           },
         ),
-        const SizedBox(height: AppTokens.space),
+        SizedBox(height: tokens.space),
         const Divider(),
         Text('Reminders', style: Theme.of(context).textTheme.titleMedium),
         ListTile(
@@ -88,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('OEM battery restrictions'),
           subtitle: const Text(
-            'Turn off battery optimization so night-before alarms survive.',
+            'Turn off battery optimization so 20:00 and 06:30 alarms survive.',
           ),
           trailing: TextButton(
             onPressed: _openBattery,
@@ -97,15 +97,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Night-before hour'),
-          subtitle: const Text('20:00 local, stored in settings'),
-          onTap: () => session.setAlarmHour(SettingKey.nightBeforeHour, 20),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Morning-of hour'),
-          subtitle: const Text('07:00 local, stored in settings'),
-          onTap: () => session.setAlarmHour(SettingKey.morningOfHour, 7),
+          title: const Text('School clocks'),
+          subtitle: const Text(
+            '20:00 put it out · 06:15 today\'s check · 06:30 need-by',
+          ),
+          onTap: session.restoreSchoolClocks,
         ),
         const Divider(),
         Text('Privacy', style: Theme.of(context).textTheme.titleMedium),
@@ -118,6 +114,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const Divider(),
         Text('Diagnostics', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
+        Text(
+          '90 seconds proves the channel works. 5 hours, app swiped from '
+          'recents and the phone locked, is the OEM test.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
         FilledButton.tonal(
           onPressed: session.scheduleSmokeAlarms,
           child: const Text('Schedule 90s / 5h smoke alarms'),
@@ -125,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 12),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(AppTokens.space),
+            padding: EdgeInsets.all(tokens.space),
             child: SelectableText(session.log),
           ),
         ),

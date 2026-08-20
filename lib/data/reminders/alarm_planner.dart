@@ -5,6 +5,13 @@ class ClockTime {
   final int minute;
 }
 
+/// Locked clocks from DESIGN.md. Evening put-out, morning check, need-by.
+abstract final class SchoolClocks {
+  static const putOut = ClockTime(20, 0);
+  static const todayCheck = ClockTime(6, 15);
+  static const needBy = ClockTime(6, 30);
+}
+
 class AlarmPlan {
   const AlarmPlan({required this.kind, required this.fireAt});
 
@@ -16,14 +23,20 @@ class AlarmPlan {
 /// enqueue unbounded exact alarms.
 class AlarmPlanner {
   const AlarmPlanner({
-    this.nightBefore = const ClockTime(20, 0),
-    this.morningOf = const ClockTime(7, 0),
+    this.nightBefore = SchoolClocks.putOut,
+    this.morningOf = SchoolClocks.needBy,
+    this.briefingEvening = SchoolClocks.putOut,
+    this.briefingMorning = SchoolClocks.todayCheck,
     this.horizon = const Duration(days: 14),
+    this.pendingCap = 64,
   });
 
   final ClockTime nightBefore;
   final ClockTime morningOf;
+  final ClockTime briefingEvening;
+  final ClockTime briefingMorning;
   final Duration horizon;
+  final int pendingCap;
 
   List<AlarmPlan> forEvent({
     required DateTime? startsAt,
@@ -67,8 +80,20 @@ class AlarmPlanner {
         current.month,
         current.day,
       ).add(Duration(days: i));
-      final evening = DateTime(day.year, day.month, day.day, 19);
-      final morning = DateTime(day.year, day.month, day.day, 7);
+      final evening = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        briefingEvening.hour,
+        briefingEvening.minute,
+      );
+      final morning = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        briefingMorning.hour,
+        briefingMorning.minute,
+      );
       for (final plan in [
         AlarmPlan(kind: AlarmKind.briefingEvening, fireAt: evening.toUtc()),
         AlarmPlan(kind: AlarmKind.briefingMorning, fireAt: morning.toUtc()),
@@ -88,6 +113,9 @@ abstract final class AlarmKind {
   static const snooze = 'snooze';
   static const smokeNear = 'smoke_near';
   static const smokeFar = 'smoke_far';
+
+  static bool isBriefing(String kind) =>
+      kind == briefingEvening || kind == briefingMorning;
 }
 
 abstract final class AlarmStatus {
