@@ -18,12 +18,29 @@ class FakeMailbox implements GmailMailbox {
   int listFailures;
   int listRecentCalls = 0;
   int listHistoryCalls = 0;
+  int getFullCalls = 0;
+  int getMetadataCalls = 0;
 
   @override
   Future<String?> currentHistoryId() async => historyId;
 
   @override
+  Future<FetchedMessage> getMetadata(String id) async {
+    getMetadataCalls += 1;
+    final message = messages[id] ?? (throw StateError('unknown message $id'));
+    return FetchedMessage(
+      id: message.id,
+      from: message.from,
+      subject: message.subject,
+      body: '',
+      threadId: message.threadId,
+      internalDateMs: message.internalDateMs,
+    );
+  }
+
+  @override
   Future<FetchedMessage> getFull(String id) async {
+    getFullCalls += 1;
     return messages[id] ?? (throw StateError('unknown message $id'));
   }
 

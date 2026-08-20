@@ -12,6 +12,7 @@ import '../data/events/event_repository.dart';
 import '../data/gmail/from_header.dart';
 import '../data/gmail/gmail_readonly.dart';
 import '../data/gmail/live_mailbox.dart';
+import '../data/gmail/sync_error.dart';
 import '../data/parser/proposal.dart' as school;
 import '../data/reminders/alarm_planner.dart';
 import '../data/reminders/alarm_repository.dart';
@@ -36,6 +37,7 @@ class AppSession extends ChangeNotifier {
   bool signInReady = false;
   bool vaultReady = false;
   bool onboardingDone = false;
+  bool needsReconnect = false;
   int reviewCount = 0;
   int eventCount = 0;
   String lastSyncLabel = 'Not synced yet';
@@ -206,6 +208,7 @@ class AppSession extends ChangeNotifier {
       user = await GoogleSignIn.instance.authenticate(
         scopeHint: const [GmailApi.gmailReadonlyScope],
       );
+      needsReconnect = false;
       log = 'Signed in as ${user!.email}';
       await vault?.use((db) {
         return SourceRepository(db).seedDefault(
@@ -243,10 +246,14 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
     try {
       const scopes = [GmailApi.gmailReadonlyScope];
-      var authz = await currentUser.authorizationClient.authorizationForScopes(
-        scopes,
-      );
-      authz ??= await currentUser.authorizationClient.authorizeScopes(scopes);
+      final authz = await currentUser.authorizationClient
+          .authorizationForScopes(scopes);
+      if (authz == null) {
+        needsReconnect = true;
+        lastSyncLabel = 'Reconnect Gmail';
+        log = syncErrorCopy(SyncErrorCode.revoked);
+        return;
+      }
       final token = authz.accessToken;
       await opened.use((db) async {
         final sources = SourceRepository(db);
@@ -271,6 +278,9 @@ class AppSession extends ChangeNotifier {
           log =
               '${outcome.result.failure!.message}\n'
               '${outcome.result.notes.join('\n')}';
+          if (outcome.result.failure!.code == SyncErrorCode.revoked) {
+            needsReconnect = true;
+          }
           return;
         }
         lastSyncLabel =
@@ -285,6 +295,9 @@ class AppSession extends ChangeNotifier {
     } catch (error) {
       lastSyncLabel = 'Sync failed';
       log = 'Sync failed: $error';
+      if (classifySyncFailure(error) == SyncErrorCode.revoked) {
+        needsReconnect = true;
+      }
     } finally {
       busy = false;
       notifyListeners();

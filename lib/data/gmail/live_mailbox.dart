@@ -77,14 +77,33 @@ class LiveGmailMailbox implements GmailMailbox {
   @override
   Future<FetchedMessage> getFull(String id) async {
     final message = await api.users.messages.get('me', id, format: 'full');
+    return _toFetched(message, id, withBody: true);
+  }
+
+  @override
+  Future<FetchedMessage> getMetadata(String id) async {
+    final message = await api.users.messages.get(
+      'me',
+      id,
+      format: 'metadata',
+      metadataHeaders: const ['From', 'Subject', 'Date'],
+    );
+    return _toFetched(message, id, withBody: false);
+  }
+
+  FetchedMessage _toFetched(
+    Message message,
+    String id, {
+    required bool withBody,
+  }) {
     return FetchedMessage(
       id: id,
       from: _header(message, 'From') ?? '',
       subject: _header(message, 'Subject') ?? '(no subject)',
-      body: extractMessageText(message),
+      body: withBody ? extractMessageText(message) : '',
       threadId: message.threadId,
       internalDateMs: int.tryParse(message.internalDate ?? ''),
-      hasAttachments: _hasAttachments(message.payload),
+      hasAttachments: withBody && _hasAttachments(message.payload),
       historyId: null,
     );
   }

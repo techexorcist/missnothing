@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:googleapis/gmail/v1.dart';
-import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:missnothing/config/app_config.dart';
@@ -45,16 +44,26 @@ class AllowlistedFetch {
 }
 
 GmailApi gmailApiForToken(String accessToken) {
-  final credentials = AccessCredentials(
-    AccessToken(
-      'Bearer',
-      accessToken,
-      DateTime.now().toUtc().add(const Duration(minutes: 50)),
-    ),
-    null,
-    const [AppConfig.gmailReadonlyScope],
-  );
-  return GmailApi(authenticatedClient(http.Client(), credentials));
+  return GmailApi(BearerAuthClient(http.Client(), accessToken));
+}
+
+/// Attaches the access token. Does not invent an expiry or a refresh token —
+/// Google Sign-In 7 only returns `accessToken`, so `googleapis_auth` cannot
+/// refresh this client.
+class BearerAuthClient extends http.BaseClient {
+  BearerAuthClient(this._inner, this._accessToken);
+
+  final http.Client _inner;
+  final String _accessToken;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    request.headers['Authorization'] = 'Bearer $_accessToken';
+    return _inner.send(request);
+  }
+
+  @override
+  void close() => _inner.close();
 }
 
 /// Fetch allowlisted mail (including Spam/Trash) through the incremental

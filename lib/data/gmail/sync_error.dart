@@ -91,7 +91,7 @@ String syncErrorCopy(SyncErrorCode code) {
     SyncErrorCode.offline =>
       'Offline. MissNothing will retry when the network returns.',
     SyncErrorCode.revoked =>
-      'Gmail access was revoked. Reconnect the account in Settings.',
+      'Gmail access was revoked. Reconnect this account to keep reading mail.',
     SyncErrorCode.quota =>
       'Gmail temporarily limited this mailbox. Sync will retry later.',
     SyncErrorCode.backend =>

@@ -84,4 +84,12 @@ void main() {
     expect(find.text('Sports day circular'), findsOneWidget);
     expect(find.text('nothing found'), findsOneWidget);
   });
+
+  testWidgets('revoked Gmail access is a full-screen block', (tester) async {
+    final session = TestSession()..needsReconnect = true;
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+    expect(find.text('Reconnect Gmail'), findsWidgets);
+    expect(find.textContaining('gmail.readonly'), findsOneWidget);
+  });
 }

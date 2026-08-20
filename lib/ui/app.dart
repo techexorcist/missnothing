@@ -8,6 +8,7 @@ import 'screens/event_detail_screen.dart';
 import 'screens/kid_mode_screen.dart';
 import 'screens/misses_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/reconnect_screen.dart';
 import 'screens/unlock_screen.dart';
 import 'session.dart';
 
@@ -79,7 +80,12 @@ GoRouter _buildRouter(AppSession session) {
       if (!session.onboardingDone) {
         return loc == '/onboarding' ? null : '/onboarding';
       }
-      if (loc == '/unlock' || loc == '/onboarding') return '/home';
+      if (session.needsReconnect) {
+        return loc == '/reconnect' ? null : '/reconnect';
+      }
+      if (loc == '/unlock' || loc == '/onboarding' || loc == '/reconnect') {
+        return '/home';
+      }
       return null;
     },
     routes: [
@@ -90,6 +96,10 @@ GoRouter _buildRouter(AppSession session) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => OnboardingScreen(session: session),
+      ),
+      GoRoute(
+        path: '/reconnect',
+        builder: (context, state) => ReconnectScreen(session: session),
       ),
       GoRoute(
         path: '/kid',

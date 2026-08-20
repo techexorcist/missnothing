@@ -54,5 +54,9 @@ abstract class GmailMailbox {
 
   Future<FetchedMessage> getFull(String id);
 
+  /// Headers only. Used to reject non-allowlisted From lines before fetching
+  /// a body.
+  Future<FetchedMessage> getMetadata(String id);
+
   Future<String?> currentHistoryId();
 }

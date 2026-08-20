@@ -45,12 +45,14 @@ class IncrementalSync {
     this.parse = parseSchoolIn,
     this.sleep = _defaultSleep,
     this.maxAttempts = 3,
-  });
+    DateTime Function()? clock,
+  }) : clock = clock ?? DateTime.now;
 
   final GmailMailbox mailbox;
   final SchoolParser parse;
   final Future<void> Function(Duration duration) sleep;
   final int maxAttempts;
+  final DateTime Function() clock;
 
   Future<IncrementalSyncResult> run({
     required Iterable<AllowlistEntry> allowlist,
@@ -145,38 +147,49 @@ class IncrementalSync {
         id: GmailMessageRecord(id: id, parseStatus: GmailParseStatus.listed),
     };
     final parsed = <AllowlistedCircular>[];
+    final now = clock();
     for (final id in ids) {
       try {
-        final message = await _retry(() => mailbox.getFull(id));
+        final meta = await _retry(() => mailbox.getMetadata(id));
         final base = records[id]!.copyWith(
+          threadId: meta.threadId,
+          internalDateMs: meta.internalDateMs,
+          fromRaw: meta.from,
+          subjectRaw: meta.subject,
+        );
+        if (!matchesAllowlist(meta.from, allowlist)) {
+          records[id] = base.copyWith(
+            parseStatus: GmailParseStatus.fromMismatch,
+          );
+          notes.add(
+            'skip $id: mailbox "${mailboxFromFromHeader(meta.from)}" '
+            'is not on the allowlist',
+          );
+          continue;
+        }
+        final message = await _retry(() => mailbox.getFull(id));
+        final fetched = base.copyWith(
           threadId: message.threadId,
           internalDateMs: message.internalDateMs,
           fromRaw: message.from,
           subjectRaw: message.subject,
         );
-        if (!matchesAllowlist(message.from, allowlist)) {
-          records[id] = base.copyWith(
-            parseStatus: GmailParseStatus.fromMismatch,
-          );
-          notes.add(
-            'skip $id: mailbox "${mailboxFromFromHeader(message.from)}" '
-            'is not on the allowlist',
-          );
-          continue;
-        }
         if (message.body.trim().isEmpty && !message.hasAttachments) {
-          records[id] = base.copyWith(parseStatus: GmailParseStatus.emptyBody);
+          records[id] = fetched.copyWith(
+            parseStatus: GmailParseStatus.emptyBody,
+          );
           notes.add(
             'skip $id: empty body after normalize (${message.subject})',
           );
           continue;
         }
+        final messageDate = message.internalDateMs == null
+            ? now
+            : DateTime.fromMillisecondsSinceEpoch(message.internalDateMs!);
         final proposal = parse(
           ParseInput(
             from: mailboxFromFromHeader(message.from) ?? message.from,
-            messageDate: message.internalDateMs == null
-                ? DateTime.now()
-                : DateTime.fromMillisecondsSinceEpoch(message.internalDateMs!),
+            messageDate: messageDate,
             body: message.body,
             subject: message.subject,
             threadId: message.threadId,
@@ -184,7 +197,7 @@ class IncrementalSync {
           ),
         );
         if (proposal == null) {
-          records[id] = base.copyWith(
+          records[id] = fetched.copyWith(
             parseStatus: GmailParseStatus.nothingFound,
           );
           notes.add(
@@ -193,9 +206,20 @@ class IncrementalSync {
           );
           continue;
         }
-        records[id] = base.copyWith(
+        records[id] = fetched.copyWith(
           parseStatus: GmailParseStatus.parsed(_wire(proposal.type)),
         );
+        if (!shouldPropose(
+          proposal: proposal,
+          messageDate: messageDate,
+          now: now,
+        )) {
+          notes.add(
+            'skip $id: past event ${proposal.date} is not proposed '
+            '(${message.subject})',
+          );
+          continue;
+        }
         notes.add(
           'used $id type=${proposal.type.name} date=${proposal.date} '
           '(${message.subject})',
@@ -205,13 +229,7 @@ class IncrementalSync {
             id: id,
             from: message.from,
             subject: message.subject,
-            messageDate:
-                proposal.date ??
-                (message.internalDateMs == null
-                    ? DateTime.now()
-                    : DateTime.fromMillisecondsSinceEpoch(
-                        message.internalDateMs!,
-                      )),
+            messageDate: proposal.date ?? messageDate,
             body: message.body,
             proposal: proposal,
           ),
@@ -247,12 +265,23 @@ class IncrementalSync {
   }
 }
 
-String _wire(ProposalType type) {
-  return switch (type) {
-    ProposalType.datedAction => 'dated_action',
-    ProposalType.undatedAction => 'undated_action',
-    ProposalType.decision => 'decision',
-  };
+String _wire(ProposalType type) => type.wire;
+
+/// First sync must not dump last month's colour dresses into Review.
+/// Dated cards need `date >= today`. Undated cards need a recent message.
+bool shouldPropose({
+  required Proposal proposal,
+  required DateTime messageDate,
+  required DateTime now,
+}) {
+  final today = DateTime(now.year, now.month, now.day);
+  final date = proposal.date;
+  if (date != null) {
+    final event = DateTime(date.year, date.month, date.day);
+    return !event.isBefore(today);
+  }
+  final sent = DateTime(messageDate.year, messageDate.month, messageDate.day);
+  return !sent.isBefore(today.subtract(const Duration(days: 14)));
 }
 
 Future<void> _defaultSleep(Duration duration) => Future<void>.delayed(duration);
