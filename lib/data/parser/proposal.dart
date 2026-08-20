@@ -1,10 +1,42 @@
-enum ProposalType { datedAction, undatedAction, decision }
+enum ProposalType {
+  datedAction('dated_action'),
+  undatedAction('undated_action'),
+  decision('decision');
 
-enum ItemKind { dress, bring, attend, offer, other }
+  const ProposalType(this.wire);
+  final String wire;
+}
 
-enum Urgency { none, actToday }
+enum ItemKind {
+  dress('dress'),
+  bring('bring'),
+  attend('attend'),
+  offer('offer'),
+  other('other');
 
-enum WhenHint { dispersal, pickup, homeTime, assembly, lunch, beforeSchool }
+  const ItemKind(this.wire);
+  final String wire;
+}
+
+enum Urgency {
+  none('none'),
+  actToday('act_today');
+
+  const Urgency(this.wire);
+  final String wire;
+}
+
+enum WhenHint {
+  dispersal('dispersal'),
+  pickup('pickup'),
+  homeTime('home_time'),
+  assembly('assembly'),
+  lunch('lunch'),
+  beforeSchool('before_school');
+
+  const WhenHint(this.wire);
+  final String wire;
+}
 
 class ProposalItem {
   const ProposalItem({
@@ -16,7 +48,7 @@ class ProposalItem {
   final ItemKind kind;
   final String textRaw;
 
-  /// Where to go. Locked on the item, not the card.
+  /// Where to go. Locked on the item, not only the card.
   final String? location;
 }
 
@@ -46,6 +78,33 @@ class Proposal {
   /// Also stored on offer items. Kept here so a card can name a place.
   final String? location;
   final List<DateTime> dateCandidates;
+
+  static String fmt(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  Map<String, Object?> toJson() {
+    final json = <String, Object?>{
+      'type': type.wire,
+      'date': date == null ? null : fmt(date!),
+      'urgency': urgency.wire,
+      'when_hint': whenHint?.wire,
+      'location': location,
+      'from': from,
+      'thread_id': threadId,
+      'items': [
+        for (final item in items)
+          {
+            'kind': item.kind.wire,
+            'text_raw': item.textRaw,
+            if (item.location != null) 'location': item.location,
+          },
+      ],
+    };
+    if (date != null) json['all_day'] = allDay ?? true;
+    return json;
+  }
 }
 
 class ParseInput {

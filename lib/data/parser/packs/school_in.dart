@@ -29,6 +29,9 @@ const Set<String> _dayStopwords = {
   'first',
   'second',
   'other',
+  'half',
+  'full',
+  'working',
 };
 
 const Set<String> _festivalDays = {
@@ -243,8 +246,13 @@ String _stripLead(String span) {
   return s;
 }
 
-final RegExp _xDay = RegExp(r'\b([A-Z][a-z]+)(\s+[A-Z][a-z]+)?\s+Day\b');
+final RegExp _xDay = RegExp(r'\b([A-Za-z]+)\s+Day\b', caseSensitive: false);
 
+/// "Bagless Day", "Sports Day", "Ethnic Day", "Hat Day", "Pyjama Day".
+///
+/// One word before Day covers the vocabulary without enumerating it.
+/// Stopwords keep "the day" / "half day" / "working day" out; the festival
+/// list keeps "Independence Day" out.
 List<(int, String)> xDayHits(String sentence) {
   final hits = <(int, String)>[];
   for (final m in _xDay.allMatches(sentence)) {

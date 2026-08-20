@@ -1,21 +1,32 @@
 {
   "id": "gold-02",
-  "from": "vnspreprimary@vidyaniketanhebbal.org",
-  "message_date": "2026-07-29",
+  "note": "decision with date null and act_today. Body typo 'swears' is deliberate — never a cue, never silently corrected.",
+  "message_date": "2026-07-29T10:00:00+05:30",
+  "from": "preprimary@school.example",
+  "subject": "Pre-loved school sweaters",
+  "body": "SCHOOL NAME REDACTED\n&nbsp;\nCir No: 25/MONT/2026-27&nbsp;&nbsp;&nbsp;&nbsp;29 July 2026\n&nbsp;\nDear Parents,\nWe have a limited number of pre-loved school sweaters available in sizes 4, 5, and 6 to give away. These sweaters are in excellent condition and are available on a first-come, first-served basis.\nThe swears will be placed in a carton box at the center foyer. Parents who are interested can come and take a look at them during dispersal.\nRegards,\n[REDACTED]\nHeadmistress Montessori",
   "expect": {
     "type": "decision",
     "date": null,
     "urgency": "act_today",
     "when_hint": "dispersal",
+    "location": "carton box at the center foyer",
     "items": [
       {
         "kind": "offer",
-        "text_contains": "sweaters",
+        "detect": "pre-loved school sweaters",
+        "text_raw": "pre-loved school sweaters available in sizes 4, 5, and 6 to give away",
         "location": "carton box at the center foyer"
       }
     ]
   },
-  "must_reject_as_event_date": ["2026-07-29", "25/MONT/2026-27"],
+  "date_candidates": ["2026-07-29"],
+  "must_reject": ["25/MONT/2026-27", "2026-27"],
   "must_keep_typo": "swears",
-  "not_nothing_found": true
+  "fails_if": [
+    "dated card on 29 Jul (the letterhead issue date)",
+    "filed under nothing-found",
+    "three fragment items instead of one action",
+    "stored text sanitised or paraphrased"
+  ]
 }

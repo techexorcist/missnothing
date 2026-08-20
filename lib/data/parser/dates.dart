@@ -180,8 +180,9 @@ List<DateCandidate> enumerateDates(String body, DateTime messageDate) =>
 
 DateTime? pickEventDate(List<DateCandidate> candidates) {
   final others = realDates(candidates);
-  if (others.isNotEmpty) return others.first.date;
-  return null;
+  if (others.isEmpty) return null;
+  others.sort((a, b) => a.date.compareTo(b.date));
+  return others.first.date;
 }
 
 bool looksLikeCirRef(String token) =>

@@ -1,15 +1,37 @@
 {
   "id": "gold-01",
-  "from": "vnspreprimary@vidyaniketanhebbal.org",
+  "note": "dated_action. Two distinct actions on one day. Names redacted.",
   "message_date": "2026-08-15T14:43:00+05:30",
+  "from": "preprimary@school.example",
+  "subject": "Independence Day Celebration - Montessori",
+  "body": "SCHOOL NAME REDACTED\n&nbsp;\nCir No:34/MONT/2026-27&nbsp;&nbsp;&nbsp;&nbsp;15 August 2026\n&nbsp;\nDear Parents,\nAs part of the Independence Day celebrations in our Montessori section on 19th August, we request you to send your child dressed in any ethnic outfit in the tricolour theme (saffron, white, or green).\nA gentle reminder that 19th August will also be a Bagless Day. Kindly send your child with only their snacks bag.\nWe look forward to celebrating this special occasion with our little ones! 🇮🇳\nWarm regards,\n[REDACTED]\nHeadmistress Montessori",
   "expect": {
     "type": "dated_action",
     "date": "2026-08-19",
     "all_day": true,
+    "urgency": "none",
+    "when_hint": null,
+    "location": null,
     "items": [
-      { "kind": "dress", "text_contains": "ethnic outfit" },
-      { "kind": "bring", "text_contains": "Bagless Day" }
+      {
+        "kind": "dress",
+        "detect": "ethnic outfit",
+        "text_raw": "ethnic outfit in the tricolour theme (saffron, white, or green)"
+      },
+      {
+        "kind": "bring",
+        "detect": "snacks bag",
+        "text_raw": "Bagless Day. Kindly send your child with only their snacks bag"
+      }
     ]
   },
-  "must_reject_as_event_date": ["2026-08-15", "34/MONT/2026-27", "2026-27"]
+  "date_candidates": ["2026-08-15", "2026-08-19"],
+  "must_reject": ["34/MONT/2026-27", "2026-27"],
+  "fails_if": [
+    "holiday-only title (Independence Day as the item)",
+    "event dated 15 Aug (the letterhead issue date)",
+    "bagless action dropped",
+    "circular number parsed as a date",
+    "item text paraphrased rather than clipped from the body"
+  ]
 }
