@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -26,12 +27,14 @@ class VaultOpen {
 }
 
 class MissNothingVault {
-  const MissNothingVault._({required String path, required String keyHex})
+  MissNothingVault._({required String path, required String keyHex})
     : _path = path,
       _keyHex = keyHex;
 
   final String _path;
   final String _keyHex;
+  AppDatabase? _db;
+  Future<AppDatabase>? _opening;
 
   AppDatabase _openDatabase() {
     return AppDatabase(
@@ -50,13 +53,32 @@ class MissNothingVault {
     );
   }
 
+  Future<AppDatabase> _ensureOpen() {
+    final existing = _db;
+    if (existing != null) return Future.value(existing);
+    return _opening ??= () async {
+      try {
+        final db = _openDatabase();
+        await GmailMessageIndex(db).initialize();
+        _db = db;
+        return db;
+      } catch (_) {
+        _opening = null;
+        rethrow;
+      }
+    }();
+  }
+
   Future<T> use<T>(Future<T> Function(AppDatabase db) action) async {
-    final db = _openDatabase();
-    try {
-      return await action(db);
-    } finally {
-      await db.close();
-    }
+    final db = await _ensureOpen();
+    return action(db);
+  }
+
+  Future<void> close() async {
+    final db = _db;
+    _db = null;
+    _opening = null;
+    await db?.close();
   }
 
   Future<IdReconciliation> recordGmailMessages({
@@ -94,35 +116,24 @@ Future<VaultOpen> unlockVault() async {
   final version = cipher.first.values.first.toString();
   raw.close();
 
-  final db = AppDatabase(
-    NativeDatabase.createInBackground(
-      File(path),
-      setup: (database) {
-        database.execute("PRAGMA key = \"x'$hex'\";");
-        if (database.select('PRAGMA cipher_version;').isEmpty) {
-          throw StateError(
-            'Opened sqlite without SQLCipher. Refusing to store mail on disk.',
-          );
-        }
-      },
-    ),
-  );
-  await GmailMessageIndex(db).initialize();
-  final now = DateTime.now().toIso8601String();
-  await db.customStatement(
-    'INSERT INTO meta(k, v) VALUES(?, ?) '
-    'ON CONFLICT(k) DO UPDATE SET v = excluded.v;',
-    ['last_unlock', now],
-  );
-  final row = await db
-      .customSelect(
-        'SELECT v FROM meta WHERE k = ?;',
-        variables: [Variable<String>('last_unlock')],
-      )
-      .getSingle();
-  await db.close();
+  late final String lastUnlock;
+  await vault.use((db) async {
+    final now = DateTime.now().toIso8601String();
+    await db.customStatement(
+      'INSERT INTO meta(k, v) VALUES(?, ?) '
+      'ON CONFLICT(k) DO UPDATE SET v = excluded.v;',
+      ['last_unlock', now],
+    );
+    final row = await db
+        .customSelect(
+          'SELECT v FROM meta WHERE k = ?;',
+          variables: [Variable<String>('last_unlock')],
+        )
+        .getSingle();
+    lastUnlock = row.read<String>('v');
+  });
   return VaultOpen(
-    lastUnlock: row.read<String>('v'),
+    lastUnlock: lastUnlock,
     cipherVersion: version,
     vault: vault,
   );

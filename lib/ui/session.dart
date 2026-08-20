@@ -46,8 +46,10 @@ class AppSession extends ChangeNotifier {
   List<LayoutSlot> tomorrowSlots = const [];
   List<SourceAllowlistEntry> allowlist = const [];
   List<AppAccount> accounts = const [];
+  List<GmailMiss> misses = const [];
   int couldntRead = 0;
   int syncIncomplete = 0;
+  Future<void>? _refreshing;
 
   bool get actionsOn => signInReady && vaultReady && !busy;
 
@@ -107,7 +109,13 @@ class AppSession extends ChangeNotifier {
     await refreshFromVault();
   }
 
-  Future<void> refreshFromVault() async {
+  Future<void> refreshFromVault() {
+    return _refreshing ??= _readVault().whenComplete(() {
+      _refreshing = null;
+    });
+  }
+
+  Future<void> _readVault() async {
     final opened = vault;
     if (opened == null) {
       notifyListeners();
@@ -134,14 +142,21 @@ class AppSession extends ChangeNotifier {
       accounts = await db.select(db.appAccounts).get();
       reviewCount = inbox.length;
       eventCount = agenda.length;
-      final misses = await GmailMessageIndex(db).missCounts();
-      couldntRead = misses.couldntRead;
-      syncIncomplete = misses.incomplete;
+      final counts = await GmailMessageIndex(db).missCounts();
+      couldntRead = counts.couldntRead;
+      syncIncomplete = counts.incomplete;
+      misses = await GmailMessageIndex(db).misses();
       try {
         await GlanceState(db).publish();
       } catch (_) {}
     });
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    vault?.close();
+    super.dispose();
   }
 
   Future<void> completeOnboarding() async {

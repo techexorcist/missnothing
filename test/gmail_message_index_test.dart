@@ -92,4 +92,46 @@ void main() {
     expect(await db.select(db.proposals).get(), isEmpty);
     expect(raw.select('PRAGMA user_version;').single.values.single, 1);
   });
+
+  test(
+    'miss counts separate unread failures from incomplete downloads',
+    () async {
+      final db = AppDatabase(NativeDatabase.opened(sqlite3.openInMemory()));
+      addTearDown(db.close);
+      final index = GmailMessageIndex(db);
+      await index.initialize();
+
+      await index.recordAndReconcile(
+        listedIds: const ['m1', 'm2', 'm3', 'm4', 'm5'],
+        records: [
+          GmailMessageRecord(
+            id: 'm1',
+            parseStatus: GmailParseStatus.nothingFound,
+            subjectRaw: 'Sports day circular',
+          ),
+          GmailMessageRecord(id: 'm2', parseStatus: GmailParseStatus.emptyBody),
+          GmailMessageRecord(
+            id: 'm3',
+            parseStatus: GmailParseStatus.fetchError,
+          ),
+          GmailMessageRecord(id: 'm4', parseStatus: GmailParseStatus.listed),
+          GmailMessageRecord(
+            id: 'm5',
+            parseStatus: GmailParseStatus.parsed('dated_action'),
+          ),
+        ],
+      );
+
+      final counts = await index.missCounts();
+      expect(counts.couldntRead, 3);
+      expect(counts.incomplete, 1);
+
+      final misses = await index.misses();
+      expect(misses.map((miss) => miss.id).toSet(), {'m1', 'm2', 'm3'});
+      expect(
+        misses.singleWhere((miss) => miss.id == 'm1').subject,
+        'Sports day circular',
+      );
+    },
+  );
 }

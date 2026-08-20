@@ -121,4 +121,36 @@ class GmailMessageIndex {
       incomplete: byStatus[GmailParseStatus.listed] ?? 0,
     );
   }
+
+  Future<List<GmailMiss>> misses({int limit = 40}) async {
+    final rows = await db
+        .customSelect(
+          'SELECT message_id, parse_status, subject_raw FROM gmail_messages '
+          'WHERE parse_status IN (?, ?, ?) '
+          'ORDER BY last_seen_at DESC LIMIT ?;',
+          variables: [
+            Variable<String>(GmailParseStatus.nothingFound),
+            Variable<String>(GmailParseStatus.emptyBody),
+            Variable<String>(GmailParseStatus.fetchError),
+            Variable<int>(limit),
+          ],
+        )
+        .get();
+    return [
+      for (final row in rows)
+        GmailMiss(
+          id: row.read<String>('message_id'),
+          status: row.read<String>('parse_status'),
+          subject: row.read<String?>('subject_raw'),
+        ),
+    ];
+  }
+}
+
+class GmailMiss {
+  const GmailMiss({required this.id, required this.status, this.subject});
+
+  final String id;
+  final String status;
+  final String? subject;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:missnothing/data/db/gmail_message_index.dart';
 import 'package:missnothing/ui/app.dart';
 import 'package:missnothing/ui/session.dart';
 
@@ -58,5 +59,29 @@ void main() {
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     expect(find.text('Mail stays on this phone'), findsOneWidget);
+  });
+
+  testWidgets('home opens misses when allowlisted mail could not be read', (
+    tester,
+  ) async {
+    final session = TestSession()
+      ..couldntRead = 1
+      ..misses = const [
+        GmailMiss(
+          id: 'm1',
+          status: 'nothing_found',
+          subject: 'Sports day circular',
+        ),
+      ];
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining("Couldn't read"), findsOneWidget);
+    await tester.tap(find.textContaining("Couldn't read"));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't read"), findsWidgets);
+    expect(find.text('Sports day circular'), findsOneWidget);
+    expect(find.text('nothing found'), findsOneWidget);
   });
 }

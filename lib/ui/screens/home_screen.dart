@@ -16,68 +16,112 @@ class HomeScreen extends StatelessWidget {
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     final slots = session.tomorrowSlots;
     final out = slots.where((slot) => slot.laidOut || slot.leaveAtHome).length;
-    if (slots.isEmpty && session.reviewCount == 0) {
-      return _Kettle(
-        color: tokens.lime,
-        ink: tokens.ink,
-        title: 'Nothing\nto put out.',
-        sub: session.lastSyncLabel,
-      );
-    }
-    if (slots.isEmpty) {
-      return ListView(
-        padding: EdgeInsets.all(tokens.space),
-        children: [
-          Text(
-            '${session.reviewCount} LOOSE · FROM SCHOOL',
-            style: _kicker(tokens),
-          ),
-          const SizedBox(height: 8),
-          Text('Where do\nthese go?', style: _display(tokens, 32)),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: () => context.go('/review'),
-            child: const Text('SORT THEM'),
-          ),
-          if (session.couldntRead > 0) ...[
-            const SizedBox(height: 16),
-            Text(
-              'We got ${session.couldntRead}. Couldn\'t read.',
-              style: TextStyle(
-                color: tokens.actToday,
-                fontWeight: FontWeight.w700,
+    final child = slots.isEmpty && session.reviewCount == 0
+        ? CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _Kettle(
+                        color: tokens.lime,
+                        ink: tokens.ink,
+                        title: 'Nothing\nto put out.',
+                        sub: session.lastSyncLabel,
+                      ),
+                    ),
+                    if (session.couldntRead > 0)
+                      TextButton(
+                        onPressed: () => context.push('/misses'),
+                        child: Text(
+                          'We got ${session.couldntRead}. Couldn\'t read.',
+                          style: TextStyle(
+                            color: tokens.ink,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    if (session.syncIncomplete > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          '${session.syncIncomplete} still downloading',
+                          style: TextStyle(color: tokens.ink),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ],
-      );
-    }
-    return ListView(
-      padding: EdgeInsets.all(tokens.space),
-      children: [
-        Text('TOMORROW · ${_shortDate(tomorrow)}', style: _kicker(tokens)),
-        const SizedBox(height: 8),
-        Text('Put it out\ntonight.', style: _display(tokens, 32)),
-        const SizedBox(height: 8),
-        Text(
-          '$out of ${slots.length} out',
-          style: _kicker(tokens).copyWith(color: tokens.actToday),
-        ),
-        const SizedBox(height: 16),
-        for (final slot in slots)
-          _SlotRow(slot: slot, onToggle: () => session.toggleLaidOut(slot)),
-        const SizedBox(height: 20),
-        TextButton(
-          onPressed: () => context.push('/kid'),
-          child: const Text('SHOW THE CHILD'),
-        ),
-        if (session.reviewCount > 0)
-          TextButton(
-            onPressed: () => context.go('/review'),
-            child: Text('${session.reviewCount} still to sort'),
-          ),
-      ],
-    );
+            ],
+          )
+        : ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(tokens.space),
+            children: [
+              if (slots.isEmpty) ...[
+                Text(
+                  '${session.reviewCount} LOOSE · FROM SCHOOL',
+                  style: _kicker(tokens),
+                ),
+                const SizedBox(height: 8),
+                Text('Where do\nthese go?', style: _display(tokens, 32)),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => context.go('/review'),
+                  child: const Text('SORT THEM'),
+                ),
+              ] else ...[
+                Text(
+                  'TOMORROW · ${_shortDate(tomorrow)}',
+                  style: _kicker(tokens),
+                ),
+                const SizedBox(height: 8),
+                Text('Put it out\ntonight.', style: _display(tokens, 32)),
+                const SizedBox(height: 8),
+                Text(
+                  '$out of ${slots.length} out',
+                  style: _kicker(tokens).copyWith(color: tokens.actToday),
+                ),
+                const SizedBox(height: 16),
+                for (final slot in slots)
+                  _SlotRow(
+                    slot: slot,
+                    onToggle: () => session.toggleLaidOut(slot),
+                  ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => context.push('/kid'),
+                  child: const Text('SHOW THE CHILD'),
+                ),
+                if (session.reviewCount > 0)
+                  TextButton(
+                    onPressed: () => context.go('/review'),
+                    child: Text('${session.reviewCount} still to sort'),
+                  ),
+              ],
+              if (session.couldntRead > 0) ...[
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => context.push('/misses'),
+                  child: Text(
+                    'We got ${session.couldntRead}. Couldn\'t read.',
+                    style: TextStyle(
+                      color: tokens.actToday,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+              if (session.syncIncomplete > 0)
+                Text(
+                  '${session.syncIncomplete} still downloading',
+                  style: TextStyle(color: tokens.ink2),
+                ),
+            ],
+          );
+    return RefreshIndicator(onRefresh: session.refreshFromVault, child: child);
   }
 }
 

@@ -52,7 +52,6 @@ class AppShell extends StatelessWidget {
         ];
         void go(int index) {
           navigationShell.goBranch(index);
-          session.refreshFromVault();
         }
 
         if (wide) {

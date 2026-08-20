@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../db/database.dart';
 import '../db/vault.dart';
+import 'alarm_planner.dart';
 import 'alarm_repository.dart';
 
 const alarmChannelId = 'missnothing_alarms';
@@ -75,7 +76,15 @@ class EventAlarms {
       await vault.use((db) async {
         final pending = await AlarmRepository(db).pending();
         for (final row in pending) {
-          await scheduleRow(row);
+          await scheduleRow(
+            row,
+            title: switch (row.kind) {
+              AlarmKind.nightBefore => 'Put it out for tomorrow',
+              AlarmKind.morningOf => 'Still not out',
+              _ => 'MissNothing',
+            },
+            body: 'School reminder',
+          );
         }
       });
     } catch (_) {}
@@ -83,15 +92,22 @@ class EventAlarms {
 
   static Future<void> scheduleRow(
     AlarmSchedule row, {
-    String title = 'MissNothing',
+    String? title,
     String body = 'School reminder',
   }) async {
     await initNotifications();
     final when = tz.TZDateTime.from(row.fireAt.toLocal(), tz.local);
     if (when.isBefore(tz.TZDateTime.now(tz.local))) return;
+    final resolvedTitle =
+        title ??
+        switch (row.kind) {
+          AlarmKind.nightBefore => 'Put it out for tomorrow',
+          AlarmKind.morningOf => 'Still not out',
+          _ => 'MissNothing',
+        };
     await notificationPlugin.zonedSchedule(
       row.notificationId,
-      title,
+      resolvedTitle,
       body,
       when,
       NotificationDetails(
