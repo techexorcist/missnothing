@@ -10,14 +10,16 @@ School circulars, turned into alarms. Local-only. Android walking skeleton first
 ## Run the skeleton (Android)
 
 1. Google Cloud: enable Gmail API. Consent **Production**, app name **MissNothing**, those two URLs.
-2. Create a **Web** OAuth client. Paste its client ID into `lib/config/app_config.dart` as `googleServerClientId`.
+2. Copy `secrets.json.example` to `secrets.json`. Paste the **Web** client ID (not the Android one).
 3. Create an **Android** OAuth client:
    - package: `app.missnothing`
    - debug SHA-1: `4B:A4:07:EA:DC:FB:B8:BD:E2:06:D8:CA:7C:09:24:5C:F4:72:D1:4A`
 4. Plug in a phone, OEM battery exemption if Xiaomi/Oppo/Samsung.
 5. `export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"`
 6. `export ANDROID_HOME="$HOME/Library/Android/sdk"`
-7. `flutter run`
+7. `flutter run --dart-define-from-file=secrets.json`
+
+On first launch, set a screen lock on the device/emulator, then **Unlock vault**. That unwraps the SQLCipher key from Android Keystore. Connect Gmail stays disabled until the vault is open.
 
 Connect Gmail → Sync. Two exact notifications: **90 seconds** (smoke; fires on almost any phone) and **5 hours** (OEM test). After Sync, swipe the app out of recents, lock the phone, leave it. A 90-second fire does not prove Xiaomi/Oppo/Samsung will keep a 12-hour alarm.
 

@@ -1,16 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/gmail/v1.dart';
 
 import 'config/app_config.dart';
+import 'data/db/vault.dart';
 import 'data/gmail/gmail_readonly.dart';
 import 'data/reminders/one_shot_alarm.dart';
 
 const _pasteWebClientId =
-    'Paste the Web OAuth client ID into lib/config/app_config.dart '
-    '(googleServerClientId), then stop and run (not hot reload).';
+    'Copy secrets.json.example to secrets.json, paste the Web OAuth '
+    'client ID, then: flutter run --dart-define-from-file=secrets.json';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,15 +48,54 @@ class SkeletonPage extends StatefulWidget {
 class _SkeletonPageState extends State<SkeletonPage> {
   GoogleSignInAccount? _user;
   String _log =
-      'Connect Gmail, then Sync. 90s is a smoke test. 5h is the OEM test: '
-      'swipe the app out of recents, lock the phone, leave it.';
+      'Unlock the vault (device PIN), then Connect Gmail. 90s is a smoke '
+      'test. 5h is the OEM test: swipe out of recents, lock, leave it.';
+  String _vault = 'Vault: unlocking…';
   bool _busy = false;
   bool _signInReady = false;
+  bool _vaultReady = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_initSignIn());
+    unawaited(_unlockThenSignIn());
+  }
+
+  Future<void> _unlockThenSignIn() async {
+    await _unlockVault();
+    await _initSignIn();
+  }
+
+  Future<void> _unlockVault() async {
+    try {
+      final opened = await unlockVault();
+      if (!mounted) return;
+      setState(() {
+        _vaultReady = true;
+        _vault =
+            'Vault open · SQLCipher ${opened.cipherVersion} · ${opened.lastUnlock}';
+      });
+    } on MissingPluginException {
+      if (!mounted) return;
+      setState(() {
+        _vaultReady = true;
+        _vault = 'Vault skipped (no Keystore on this platform)';
+      });
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _vaultReady = false;
+        _vault = 'Vault locked: ${e.code} ${e.message}';
+        _log = e.message ?? e.code;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _vaultReady = false;
+        _vault = 'Vault locked: $e';
+        _log = '$e';
+      });
+    }
   }
 
   Future<void> _initSignIn() async {
@@ -74,7 +115,9 @@ class _SkeletonPageState extends State<SkeletonPage> {
           };
         });
       });
-      signIn.attemptLightweightAuthentication();
+      if (AppConfig.googleServerClientId.isNotEmpty) {
+        signIn.attemptLightweightAuthentication();
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _log = 'Sign-in init failed: $e');
@@ -171,6 +214,8 @@ class _SkeletonPageState extends State<SkeletonPage> {
     }
   }
 
+  bool get _actionsOn => _signInReady && _vaultReady && !_busy;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,18 +230,26 @@ class _SkeletonPageState extends State<SkeletonPage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
+            Text(_vault, style: Theme.of(context).textTheme.bodySmall),
             Text(
-              'Allowlist (hardcoded): ${AppConfig.allowlistedFrom}',
+              'Allowlist: ${AppConfig.allowlistedFrom}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: !_signInReady || _busy ? null : _connect,
+              onPressed: _vaultReady || _busy
+                  ? null
+                  : () => unawaited(_unlockVault()),
+              child: const Text('Unlock vault'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: !_actionsOn ? null : _connect,
               child: const Text('Connect Gmail'),
             ),
             const SizedBox(height: 12),
             FilledButton.tonal(
-              onPressed: !_signInReady || _busy ? null : _sync,
+              onPressed: !_actionsOn ? null : _sync,
               child: const Text('Sync'),
             ),
             const SizedBox(height: 24),
