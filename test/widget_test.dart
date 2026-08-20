@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:missnothing/data/db/database.dart';
 import 'package:missnothing/data/db/gmail_message_index.dart';
 import 'package:missnothing/data/events/event_repository.dart';
+import 'package:missnothing/data/review/proposal_repository.dart';
 import 'package:missnothing/ui/app.dart';
 import 'package:missnothing/ui/screens/home_screen.dart';
 import 'package:missnothing/ui/session.dart';
@@ -179,5 +180,51 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Still downloading'), findsWidgets);
     expect(find.text('Sports day PDF'), findsOneWidget);
+  });
+
+  testWidgets('sort names the day and keeps a change before put out', (
+    tester,
+  ) async {
+    final now = DateTime(2026, 8, 21);
+    final session = TestSession()
+      ..reviewCount = 1
+      ..inbox = [
+        ProposalRecord(
+          row: Proposal(
+            id: 'p1',
+            messageId: 'm1',
+            type: 'dated_action',
+            status: 'unreviewed',
+            proposedDate: now,
+            urgency: 'none',
+            subject: 'Hat day',
+            fromRaw: 'school@example.com',
+            evidence: 'Please bring a hat.',
+            parserVersion: 'school_in.v1',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          items: const [
+            ProposalItem(
+              id: 'i1',
+              proposalId: 'p1',
+              position: 0,
+              kind: 'bring',
+              textRaw: 'Please bring a hat.',
+              completed: false,
+            ),
+          ],
+        ),
+      ];
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sort'));
+    await tester.pumpAndSettle();
+    expect(find.text('ON A DAY · Fri 21'), findsOneWidget);
+    expect(find.text('CHANGE DAY'), findsOneWidget);
+    session.setDraftDay('p1', DateTime(2026, 8, 24));
+    await tester.pump();
+    expect(find.text('ON A DAY · Mon 24'), findsOneWidget);
+    expect(session.dayFor(session.inbox.single), DateTime(2026, 8, 24));
   });
 }

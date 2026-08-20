@@ -59,6 +59,7 @@ class EventRepository {
     required String eventId,
     DateTime? startsAt,
     String? location,
+    bool clearDate = false,
   }) async {
     final record = await byId(eventId);
     if (record == null) {
@@ -66,16 +67,22 @@ class EventRepository {
     }
     final previous = record.event.startsAt;
     String? notes = record.event.notes;
+    var notesChanged = false;
     if (previous != null &&
         startsAt != null &&
         !_sameDay(previous, startsAt)) {
       notes = movedFromNote(previous);
+      notesChanged = true;
     }
     await (db.update(db.events)..where((row) => row.id.equals(eventId))).write(
       EventsCompanion(
-        startsAt: Value(startsAt),
-        location: Value(location ?? record.event.location),
-        notes: Value(notes),
+        startsAt: clearDate
+            ? const Value(null)
+            : startsAt != null
+            ? Value(startsAt)
+            : const Value.absent(),
+        location: location != null ? Value(location) : const Value.absent(),
+        notes: notesChanged ? Value(notes) : const Value.absent(),
         updatedAt: Value(DateTime.now().toUtc()),
       ),
     );

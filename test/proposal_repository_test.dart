@@ -116,4 +116,19 @@ void main() {
     expect(ledger.single.movedFrom, 'moved from Fri 21');
     expect(ledger.single.headline, 'Please bring a hat.');
   });
+
+  test('reschedule can change location without moving the day', () async {
+    await repo.persistUnreviewed(circular());
+    final event = await repo.confirmAsEvent(
+      proposalId: 'prop_m1',
+      startsAt: DateTime(2026, 8, 21),
+    );
+    final updated = await EventRepository(db).reschedule(
+      eventId: event.id,
+      location: 'center foyer',
+    );
+    expect(updated.startsAt!.day, 21);
+    expect(updated.location, 'center foyer');
+    expect(updated.notes, isNull);
+  });
 }

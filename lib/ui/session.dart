@@ -61,6 +61,7 @@ class AppSession extends ChangeNotifier {
   int couldntRead = 0;
   int syncIncomplete = 0;
   Future<void>? _refreshing;
+  final Map<String, DateTime?> _draftDays = {};
 
   bool get actionsOn => signInReady && vaultReady && !busy;
 
@@ -367,6 +368,16 @@ class AppSession extends ChangeNotifier {
     await refreshFromVault();
   }
 
+  DateTime? dayFor(ProposalRecord card) {
+    if (_draftDays.containsKey(card.row.id)) return _draftDays[card.row.id];
+    return card.row.proposedDate;
+  }
+
+  void setDraftDay(String proposalId, DateTime? day) {
+    _draftDays[proposalId] = day;
+    notifyListeners();
+  }
+
   Future<void> confirmProposal(
     ProposalRecord card, {
     DateTime? date,
@@ -380,7 +391,7 @@ class AppSession extends ChangeNotifier {
     try {
       await opened.use((db) async {
         final starts = SchoolTimings.stamp(
-          date ?? card.row.proposedDate,
+          date ?? dayFor(card),
           card.row.whenHint,
         );
         final timed = SchoolTimings.clockFor(card.row.whenHint) != null;
@@ -402,6 +413,7 @@ class AppSession extends ChangeNotifier {
       });
       await EventAlarms.reconcile(opened);
       log = 'Added to agenda. Reminders schedule after you confirm, not sync.';
+      _draftDays.remove(card.row.id);
     } catch (error) {
       log = 'Could not add: $error';
     } finally {
@@ -442,20 +454,29 @@ class AppSession extends ChangeNotifier {
     await refreshFromVault();
   }
 
-  Future<void> rescheduleEvent(String eventId, DateTime day) async {
+  Future<void> rescheduleEvent(
+    String eventId, {
+    DateTime? day,
+    String? location,
+  }) async {
     final opened = vault;
     if (opened == null) return;
     await opened.use((db) async {
       final event = await EventRepository(db).reschedule(
         eventId: eventId,
         startsAt: day,
+        location: location,
       );
-      final planner = await SettingsRepository(db).planner();
-      final plans = planner.forEvent(
-        startsAt: event.startsAt,
-        allDay: event.allDay,
-      );
-      await AlarmRepository(db).replaceForEvent(eventId: event.id, plans: plans);
+      if (day != null) {
+        final planner = await SettingsRepository(db).planner();
+        final plans = planner.forEvent(
+          startsAt: event.startsAt,
+          allDay: event.allDay,
+        );
+        await AlarmRepository(
+          db,
+        ).replaceForEvent(eventId: event.id, plans: plans);
+      }
     });
     await EventAlarms.reconcile(opened);
     await refreshFromVault();

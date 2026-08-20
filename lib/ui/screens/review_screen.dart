@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/events/day_label.dart';
 import '../../data/review/proposal_repository.dart';
 import '../../theme/mn_tokens.dart';
 import '../session.dart';
@@ -107,14 +108,15 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = MnTokens.of(context);
-    final date = card.row.proposedDate;
+    final date = session.dayFor(card);
     final headline = card.items.isEmpty
         ? displayText(card.row.subject)
         : itemHeadline(card.items.first.textRaw);
     final typeWord = switch (card.row.type) {
-      'undated_action' => 'NO DAY GIVEN',
       'decision' => 'INTERESTED?',
-      _ => date == null ? 'ON A DAY' : 'ON A DAY · ${date.toLocal().day}',
+      'undated_action' when date == null => 'NO DAY GIVEN',
+      _ when date == null => 'NO DAY GIVEN',
+      _ => 'ON A DAY · ${shortDay(date)}',
     };
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -163,7 +165,12 @@ class _ReviewCard extends StatelessWidget {
                       displayText(card.row.fromRaw),
                       style: TextStyle(fontSize: 10, color: tokens.ink3),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => _pickDay(context),
+                      child: Text(date == null ? 'SET A DAY' : 'CHANGE DAY'),
+                    ),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(
@@ -201,6 +208,22 @@ class _ReviewCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _pickDay(BuildContext context) async {
+    final now = DateTime.now();
+    final current = session.dayFor(card)?.toLocal() ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+    if (picked == null) return;
+    session.setDraftDay(
+      card.row.id,
+      DateTime(picked.year, picked.month, picked.day),
     );
   }
 }

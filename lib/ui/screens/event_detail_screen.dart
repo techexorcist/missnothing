@@ -128,12 +128,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             trailing: const Text('Change'),
             onTap: event == null ? null : () => _pickDay(event.startsAt),
           ),
-          if (event?.location != null && event!.location!.isNotEmpty)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Where'),
-              subtitle: Text(displayText(event.location!)),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Where'),
+            subtitle: Text(
+              event?.location == null || event!.location!.isEmpty
+                  ? 'No place named'
+                  : displayText(event.location!),
             ),
+            trailing: const Text('Change'),
+            onTap: event == null ? null : () => _pickWhere(event.location),
+          ),
           const SizedBox(height: 8),
           Text(
             'WHAT GOES OUT',
@@ -197,8 +202,41 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (picked == null) return;
     await widget.session.rescheduleEvent(
       widget.eventId,
-      DateTime(picked.year, picked.month, picked.day),
+      day: DateTime(picked.year, picked.month, picked.day),
     );
+    await _load();
+  }
+
+  Future<void> _pickWhere(String? current) async {
+    final controller = TextEditingController(text: current ?? '');
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Where'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Foyer, classroom, gate',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (picked == null || picked.isEmpty) return;
+    await widget.session.rescheduleEvent(widget.eventId, location: picked);
     await _load();
   }
 }
