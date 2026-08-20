@@ -92,9 +92,10 @@ void main() {
   });
 
   test('skipped proposals are sticky across reparses', () async {
-    await repo.persistUnreviewed(circular());
+    expect(await repo.persistUnreviewed(circular()), isTrue);
+    expect(await repo.persistUnreviewed(circular()), isFalse);
     await repo.decide(proposalId: 'prop_m1', status: ProposalStatus.skipped);
-    await repo.persistUnreviewed(circular());
+    expect(await repo.persistUnreviewed(circular()), isFalse);
     expect((await repo.byMessage('m1'))?.row.status, ProposalStatus.skipped);
     expect(await repo.unreviewed(), isEmpty);
   });

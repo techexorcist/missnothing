@@ -8,9 +8,12 @@ import 'package:timezone/timezone.dart' as tz;
 import '../db/database.dart';
 import '../db/vault.dart';
 import '../events/event_repository.dart';
+import '../review/inbox_namer.dart';
 import '../settings/settings_repository.dart';
 import 'alarm_planner.dart';
 import 'alarm_repository.dart';
+
+const inboxNotificationId = 10;
 
 const alarmChannelId = 'missnothing_alarms';
 const alarmChannelName = 'School reminders';
@@ -109,8 +112,32 @@ class EventAlarms {
         'Put it out for tomorrow',
       AlarmKind.morningOf => 'Need-by',
       AlarmKind.briefingMorning => "Today's check",
+      AlarmKind.dueNow => 'Put it out now',
       _ => 'MissNothing',
     };
+  }
+
+  static Future<void> notifyNewProposals(Iterable<String> headlines) async {
+    final named = namedItems(headlines);
+    if (named.isEmpty) return;
+    try {
+      await initNotifications();
+      await notificationPlugin.show(
+        inboxNotificationId,
+        named,
+        'Nothing is scheduled until you sort them.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            alarmChannelId,
+            alarmChannelName,
+            channelDescription: 'New proposals after sync',
+            importance: Importance.max,
+            priority: Priority.max,
+          ),
+        ),
+        payload: const NotificationPayload(kind: AlarmKind.inbox).encode(),
+      );
+    } catch (_) {}
   }
 
   static Future<String> bodyFor(AppDatabase db, AlarmSchedule row) async {
@@ -135,7 +162,8 @@ class EventAlarms {
     final when = tz.TZDateTime.from(row.fireAt.toLocal(), tz.local);
     if (when.isBefore(tz.TZDateTime.now(tz.local))) return;
     final resolvedTitle = title ?? titleFor(row.kind);
-    final needBy = row.kind == AlarmKind.morningOf;
+    final needBy =
+        row.kind == AlarmKind.morningOf || row.kind == AlarmKind.dueNow;
     await notificationPlugin.zonedSchedule(
       row.notificationId,
       resolvedTitle,

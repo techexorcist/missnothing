@@ -44,4 +44,29 @@ void main() {
   test('undated events produce no alarms', () {
     expect(planner.forEvent(startsAt: null, allDay: true), isEmpty);
   });
+
+  test('if every offset is past, fire now unless it is night', () {
+    final afternoon = DateTime(2026, 8, 20, 14);
+    final now = afternoon.toUtc();
+    final today = DateTime(2026, 8, 20);
+    final due = planner.forEvent(startsAt: today, allDay: true, now: now);
+    expect(due.single.kind, AlarmKind.dueNow);
+    expect(due.single.fireAt.isAfter(now), isTrue);
+
+    final night = DateTime(2026, 8, 20, 22).toUtc();
+    final deferred = planner.forEvent(startsAt: today, allDay: true, now: night);
+    expect(deferred.single.kind, AlarmKind.morningOf);
+    final local = deferred.single.fireAt.toLocal();
+    expect(local.hour, 6);
+    expect(local.minute, 30);
+    expect(local.day, 21);
+  });
+
+  test('dispersal stamps 15:30 on the event day', () {
+    final stamped = SchoolTimings.stamp(DateTime(2026, 8, 21), 'dispersal');
+    expect(stamped!.hour, 15);
+    expect(stamped.minute, 30);
+    expect(SchoolTimings.clockFor('assembly')!.hour, 8);
+    expect(SchoolTimings.clockFor(null), isNull);
+  });
 }

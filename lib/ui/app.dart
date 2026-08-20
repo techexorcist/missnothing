@@ -54,6 +54,9 @@ class _MissNothingAppState extends State<MissNothingApp> {
     if (eventId != null && _session.vaultReady) {
       _session.consumePendingEvent();
       _router.go('/event/$eventId');
+    } else if (_session.pendingReview && _session.vaultReady) {
+      _session.consumePendingReview();
+      _router.go('/review');
     }
     _router.refresh();
     setState(() {});

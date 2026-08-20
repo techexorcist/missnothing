@@ -8,10 +8,15 @@ import '../review/proposal_repository.dart';
 import 'sync_cursor_repository.dart';
 
 class AccountSyncOutcome {
-  const AccountSyncOutcome({required this.result, required this.balanced});
+  const AccountSyncOutcome({
+    required this.result,
+    required this.balanced,
+    this.newItemTexts = const [],
+  });
 
   final IncrementalSyncResult result;
   final bool balanced;
+  final List<String> newItemTexts;
 }
 
 class AccountSync {
@@ -54,6 +59,7 @@ class AccountSync {
     );
     final bodies = MessageBodyRepository(db);
     final proposals = ProposalRepository(db);
+    final newItemTexts = <String>[];
     for (final circular in result.parsed) {
       await bodies.put(
         messageId: circular.id,
@@ -62,7 +68,11 @@ class AccountSync {
         retention: bodyRetention,
         parserVersion: ProposalRepository.parserVersion,
       );
-      await proposals.persistUnreviewed(circular);
+      if (await proposals.persistUnreviewed(circular)) {
+        newItemTexts.addAll([
+          for (final item in circular.proposal.items) item.textRaw,
+        ]);
+      }
     }
     await bodies.pruneExpired(now);
     await cursors.recordSuccess(
@@ -74,6 +84,7 @@ class AccountSync {
     return AccountSyncOutcome(
       result: result,
       balanced: reconciliation.balanced,
+      newItemTexts: newItemTexts,
     );
   }
 }

@@ -42,6 +42,7 @@ class AppSession extends ChangeNotifier {
   int eventCount = 0;
   String lastSyncLabel = 'Not synced yet';
   String? pendingEventId;
+  bool pendingReview = false;
   String? lastUndoProposalId;
   List<ProposalRecord> inbox = const [];
   List<ProposalRecord> maybeCards = const [];
@@ -314,6 +315,11 @@ class AppSession extends ChangeNotifier {
             'Gmail=${outcome.result.listedIds.length} '
             '${outcome.balanced ? "OK" : "MISMATCH"}\n'
             '${outcome.result.notes.join('\n')}';
+        if (outcome.newItemTexts.isNotEmpty) {
+          await EventAlarms.notifyNewProposals([
+            for (final raw in outcome.newItemTexts) itemHeadline(raw),
+          ]);
+        }
       });
       await refreshFromVault();
     } catch (error) {
@@ -369,11 +375,17 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
     try {
       await opened.use((db) async {
+        final starts = SchoolTimings.stamp(
+          date ?? card.row.proposedDate,
+          card.row.whenHint,
+        );
+        final timed = SchoolTimings.clockFor(card.row.whenHint) != null;
         final event = await ProposalRepository(db).confirmAsEvent(
           proposalId: card.row.id,
           title: title,
-          startsAt: date ?? card.row.proposedDate,
+          startsAt: starts,
           location: location ?? card.row.location,
+          allDay: timed ? false : null,
         );
         final planner = await SettingsRepository(db).planner();
         final plans = planner.forEvent(
@@ -544,6 +556,10 @@ class AppSession extends ChangeNotifier {
     pendingEventId = null;
   }
 
+  void consumePendingReview() {
+    pendingReview = false;
+  }
+
   void _onNotification(NotificationResponse response) {
     final payload = NotificationPayload.parse(response.payload);
     pendingEventId = payload?.eventId;
@@ -553,6 +569,8 @@ class AppSession extends ChangeNotifier {
       snoozeAlarm(payload!.alarmId!);
     } else if (payload?.kind == AlarmKind.briefingMorning) {
       sync();
+    } else if (payload?.kind == AlarmKind.inbox) {
+      pendingReview = true;
     }
     notifyListeners();
   }

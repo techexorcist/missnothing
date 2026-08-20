@@ -44,6 +44,7 @@ void main() {
     );
     expect(first.result.mode, SyncMode.full);
     expect(first.balanced, isTrue);
+    expect(first.newItemTexts, isNotEmpty);
     expect(await ProposalRepository(db).unreviewed(), hasLength(1));
     expect((await SyncCursorRepository(db).find('acct_1'))?.historyId, 'H3');
 
@@ -53,6 +54,7 @@ void main() {
       allowlist: [AllowlistEntry.mailbox('school@example.com')],
     );
     expect(second.result.mode, SyncMode.incremental);
+    expect(second.newItemTexts, isEmpty);
     expect(mailbox.listRecentCalls, 1);
     expect((await SyncCursorRepository(db).find('acct_1'))?.historyId, 'H4');
   });

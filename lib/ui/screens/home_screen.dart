@@ -336,6 +336,7 @@ class _AlarmToggle extends StatelessWidget {
       AlarmKind.nightBefore || AlarmKind.briefingEvening =>
         '$hh:$mm Put it out',
       AlarmKind.morningOf => '$hh:$mm Need-by',
+      AlarmKind.dueNow => '$hh:$mm Put it out now',
       AlarmKind.briefingMorning => "$hh:$mm Today's check",
       _ => '$hh:$mm ${alarm.kind.replaceAll('_', ' ')}',
     };

@@ -95,6 +95,17 @@ void main() {
     expect(find.textContaining('gmail.readonly'), findsOneWidget);
   });
 
+  testWidgets('inbox notification opens Sort', (tester) async {
+    final session = TestSession();
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+    session.pendingReview = true;
+    session.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing loose'), findsOneWidget);
+    expect(session.pendingReview, isFalse);
+  });
+
   testWidgets('home names tomorrow as objects and opens incompletes', (
     tester,
   ) async {

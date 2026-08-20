@@ -27,13 +27,15 @@ class ProposalRepository {
 
   static const parserVersion = 'school_in.v1';
 
-  Future<void> persistUnreviewed(AllowlistedCircular circular) async {
+  /// Returns true only the first time this message becomes an unreviewed card.
+  Future<bool> persistUnreviewed(AllowlistedCircular circular) async {
     final existing = await byMessage(circular.id);
     if (existing != null &&
         (existing.row.status == ProposalStatus.confirmed ||
             existing.row.status == ProposalStatus.skipped)) {
-      return;
+      return false;
     }
+    final isNew = existing == null;
 
     final now = DateTime.now().toUtc();
     final id = existing?.row.id ?? 'prop_${circular.id}';
@@ -78,6 +80,7 @@ class ProposalRepository {
             );
       }
     });
+    return isNew;
   }
 
   Future<ProposalRecord?> byMessage(String messageId) async {
@@ -150,6 +153,7 @@ class ProposalRepository {
     String? title,
     DateTime? startsAt,
     String? location,
+    bool? allDay,
   }) async {
     final proposal = await (db.select(
       db.proposals,
@@ -169,7 +173,7 @@ class ProposalRepository {
               sourceMessageId: Value(proposal.messageId),
               title: title ?? proposal.subject,
               startsAt: Value(startsAt ?? proposal.proposedDate),
-              allDay: Value(proposal.allDay ?? true),
+              allDay: Value(allDay ?? proposal.allDay ?? true),
               location: Value(location ?? proposal.location),
               createdAt: now,
               updatedAt: now,
