@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en" data-skin="aurora">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MissNothing — skin gallery &amp; theme-swap prototype</title>
+<style>
+/* ============================================================
+   ONE markup, SEVEN skins. Nothing below the token block knows
+   which skin is active — which is exactly the discipline the
+   Flutter ThemeExtension needs. If a widget hardcodes a colour,
+   skins break.
+   ============================================================ */
+
+/* ---------- 1 · HEARTH (Direction A) ---------- */
+[data-skin="hearth"]{
+  --bg:#FFF9F4; --bg-img:none; --surface:#FFFFFF; --surface-2:#FFF4EC;
+  --line:#F1E3D6; --line-w:1px;
+  --ink:#2A211C; --ink-2:#6E5D52; --ink-3:#9A8878;
+  --accent:#C2410C; --accent-soft:#FFEDD5; --on-accent:#FFFFFF;
+  --urgent:#DC2626; --urgent-soft:#FEE2E2; --armed:#15803D;
+  --dated:#C2410C; --undated:#0369A1; --decision:#6D28D9;
+  --r-card:22px; --r-field:14px; --r-pill:999px;
+  --shadow:0 1px 2px rgba(64,32,12,.05), 0 8px 24px -12px rgba(64,32,12,.18);
+  --f-disp:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:700; --disp-ls:-.025em; --kick-tt:none; --kick-ls:.04em;
+  --lock-bg:linear-gradient(160deg,#3B2A1E,#191210); --lock-ink:#fff;
+  --card-tilt:0deg; --tape:none; --rule-lines:none;
+}
+/* ---------- 2 · INSTRUMENT (Direction B) ---------- */
+[data-skin="instrument"]{
+  --bg:#0B0C0E; --bg-img:none; --surface:#14161A; --surface-2:#1B1E24;
+  --line:#272B33; --line-w:1px;
+  --ink:#F3F5F8; --ink-2:#98A1AE; --ink-3:#5C6472;
+  --accent:#FFB020; --accent-soft:#3A2A0C; --on-accent:#0B0C0E;
+  --urgent:#FF5A5A; --urgent-soft:#3D1717; --armed:#34D399;
+  --dated:#FFB020; --undated:#7DD3FC; --decision:#C4B5FD;
+  --r-card:2px; --r-field:2px; --r-pill:2px;
+  --shadow:none;
+  --f-disp:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:650; --disp-ls:-.03em; --kick-tt:uppercase; --kick-ls:.16em;
+  --lock-bg:#000; --lock-ink:#fff;
+  --card-tilt:0deg; --tape:none; --rule-lines:none;
+}
+/* ---------- 3 · RISO (Direction C) ---------- */
+[data-skin="riso"]{
+  --bg:#FBF6EA; --bg-img:none; --surface:#FBF6EA; --surface-2:#F3EBD9;
+  --line:#1A1815; --line-w:2.5px;
+  --ink:#1A1815; --ink-2:#6B6355; --ink-3:#A39885;
+  --accent:#FF5A36; --accent-soft:#FFE3DA; --on-accent:#FBF6EA;
+  --urgent:#FF5A36; --urgent-soft:#FFE3DA; --armed:#B6E619;
+  --dated:#FFB400; --undated:#2E3AD9; --decision:#8B2FB0;
+  --r-card:0px; --r-field:0px; --r-pill:0px;
+  --shadow:6px 6px 0 #1A1815;
+  --f-disp:Georgia,"Iowan Old Style",serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:700; --disp-ls:-.035em; --kick-tt:uppercase; --kick-ls:.14em;
+  --lock-bg:#15130F; --lock-ink:#FBF6EA;
+  --card-tilt:0deg; --tape:none; --rule-lines:none;
+}
+/* ---------- 4 · AURORA — soft, glassy, premium ---------- */
+[data-skin="aurora"]{
+  --bg:#F4F3FF;
+  --bg-img:radial-gradient(1100px 520px at 8% -8%, #DCD6FF 0%, transparent 62%),
+           radial-gradient(900px 480px at 104% 6%, #CFF3EC 0%, transparent 60%),
+           radial-gradient(760px 620px at 46% 112%, #FFE1F0 0%, transparent 62%);
+  --surface:rgba(255,255,255,.72); --surface-2:rgba(255,255,255,.5);
+  --line:rgba(124,107,255,.16); --line-w:1px;
+  --ink:#241F45; --ink-2:#645C93; --ink-3:#9A93BE;
+  --accent:#6C5CE7; --accent-soft:#E9E5FF; --on-accent:#FFFFFF;
+  --urgent:#E5397B; --urgent-soft:#FFE4EF; --armed:#12A594;
+  --dated:#6C5CE7; --undated:#0EA5C6; --decision:#D6459B;
+  --r-card:28px; --r-field:18px; --r-pill:999px;
+  --shadow:0 2px 6px rgba(60,40,140,.06), 0 22px 48px -20px rgba(60,40,140,.3);
+  --f-disp:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:640; --disp-ls:-.03em; --kick-tt:none; --kick-ls:.06em;
+  --lock-bg:linear-gradient(165deg,#2B2358,#4B2E6B 55%,#1B1638);
+  --lock-ink:#fff; --glass:blur(20px) saturate(140%);
+  --card-tilt:0deg; --tape:none; --rule-lines:none;
+}
+/* ---------- 5 · NOTEBOOK — the school diary ---------- */
+[data-skin="notebook"]{
+  --bg:#FDFBF2; --bg-img:none; --surface:#FFFEF8; --surface-2:#F7F3E4;
+  --line:#E2DAC2; --line-w:1px;
+  --ink:#1F2A44; --ink-2:#5C6480; --ink-3:#9AA0B4;
+  --accent:#D6372B; --accent-soft:#FCE6E3; --on-accent:#FFFEF8;
+  --urgent:#D6372B; --urgent-soft:#FCE6E3; --armed:#2E7D5B;
+  --dated:#D6372B; --undated:#2B5FA8; --decision:#7A4BA8;
+  --r-card:5px; --r-field:5px; --r-pill:5px;
+  --shadow:0 1px 0 #E2DAC2, 0 12px 22px -16px rgba(31,42,68,.4);
+  --f-disp:"Bradley Hand","Segoe Script","Comic Sans MS",cursive;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:700; --disp-ls:-.01em; --kick-tt:uppercase; --kick-ls:.12em;
+  --lock-bg:linear-gradient(170deg,#243049,#151C2C); --lock-ink:#FFFEF8;
+  --card-tilt:-.5deg; --tape:block;
+  --rule-lines:repeating-linear-gradient(transparent 0 27px,#EAE3CC 27px 28px);
+}
+/* ---------- 6 · DAWN — 06:15, warm light ---------- */
+[data-skin="dawn"]{
+  --bg:#FFF4EA;
+  --bg-img:linear-gradient(178deg,#FFE0C2 0%,#FFF4EA 42%,#FFFDF9 100%);
+  --surface:rgba(255,255,255,.78); --surface-2:rgba(255,246,236,.7);
+  --line:rgba(196,120,60,.18); --line-w:1px;
+  --ink:#43281A; --ink-2:#8A6448; --ink-3:#B79379;
+  --accent:#E0651A; --accent-soft:#FFE7D2; --on-accent:#FFFFFF;
+  --urgent:#D33A2C; --urgent-soft:#FFE1DD; --armed:#3E8E5A;
+  --dated:#E0651A; --undated:#1E7FA8; --decision:#9A4BC0;
+  --r-card:24px; --r-field:16px; --r-pill:999px;
+  --shadow:0 2px 5px rgba(150,80,30,.06), 0 20px 42px -22px rgba(150,80,30,.36);
+  --f-disp:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:650; --disp-ls:-.03em; --kick-tt:none; --kick-ls:.05em;
+  --lock-bg:linear-gradient(170deg,#5B2E12,#20120A); --lock-ink:#fff;
+  --glass:blur(16px); --card-tilt:0deg; --tape:none; --rule-lines:none;
+}
+/* ---------- 7 · DUSK — 20:00, lamp light ---------- */
+[data-skin="dusk"]{
+  --bg:#161228;
+  --bg-img:linear-gradient(178deg,#241A45 0%,#161228 55%,#0E0B1A 100%);
+  --surface:rgba(255,255,255,.06); --surface-2:rgba(255,255,255,.035);
+  --line:rgba(255,255,255,.11); --line-w:1px;
+  --ink:#F4EFE6; --ink-2:#B4A9C4; --ink-3:#7E7396;
+  --accent:#FFB25C; --accent-soft:rgba(255,178,92,.16); --on-accent:#241A45;
+  --urgent:#FF7A85; --urgent-soft:rgba(255,122,133,.16); --armed:#5FD9A8;
+  --dated:#FFB25C; --undated:#7FD1F0; --decision:#C9A6FF;
+  --r-card:26px; --r-field:16px; --r-pill:999px;
+  --shadow:0 2px 6px rgba(0,0,0,.3), 0 24px 50px -24px rgba(0,0,0,.75);
+  --f-disp:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --disp-w:640; --disp-ls:-.03em; --kick-tt:none; --kick-ls:.05em;
+  --lock-bg:linear-gradient(170deg,#241A45,#0B0814); --lock-ink:#fff;
+  --glass:blur(18px); --card-tilt:0deg; --tape:none; --rule-lines:none;
+}
+
+/* ============================================================
+   Skin-agnostic layout. Reads tokens only.
+   ============================================================ */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:var(--bg-img);
+  background-attachment:fixed;color:var(--ink);font-family:var(--f-body);line-height:1.45;
+  -webkit-font-smoothing:antialiased;transition:background-color .35s,color .35s}
+svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.disp{font-family:var(--f-disp);font-weight:var(--disp-w);letter-spacing:var(--disp-ls);
+  line-height:1.08}
+.kick{font-size:10.5px;font-weight:700;text-transform:var(--kick-tt);
+  letter-spacing:var(--kick-ls);color:var(--ink-3)}
+
+header.top{position:sticky;top:0;z-index:30;padding:15px 20px 0;
+  background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:blur(14px);
+  border-bottom:var(--line-w) solid var(--line)}
+.brow{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.mk{width:34px;height:34px;border-radius:calc(var(--r-card)/2);background:var(--accent);
+  color:var(--on-accent);display:grid;place-items:center;font-size:17px;flex:none;
+  border:var(--line-w) solid var(--line)}
+h1{margin:0;font-size:17px;font-family:var(--f-disp);font-weight:var(--disp-w);
+  letter-spacing:var(--disp-ls)}
+h1 small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;
+  color:var(--ink-2);letter-spacing:0;margin-top:3px}
+.picker{display:flex;gap:8px;overflow-x:auto;padding:14px 0 13px;scrollbar-width:none}
+.picker::-webkit-scrollbar{display:none}
+.picker button{font:inherit;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;
+  padding:9px 15px;border-radius:var(--r-pill);border:var(--line-w) solid var(--line);
+  background:var(--surface);color:var(--ink-2);backdrop-filter:var(--glass,none);
+  transition:all .2s}
+.picker button:hover{color:var(--ink)}
+.picker button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);
+  border-color:var(--accent)}
+.picker .sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;
+  vertical-align:1px}
+
+main{max-width:1240px;margin:0 auto;padding:28px 20px 90px}
+.lede{max-width:64ch;margin-bottom:30px}
+.lede p{font-size:14.5px;color:var(--ink-2);margin:.6em 0}
+.lede b{color:var(--ink)}
+.pull{border-left:3px solid var(--accent);padding:3px 0 3px 16px;margin:22px 0}
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:34px 28px}
+.cap{display:flex;align-items:baseline;gap:9px;margin:0 0 5px}
+.cap .n{font-size:11px;font-weight:800;color:var(--accent)}
+.cap h2{font-size:15px;margin:0;font-family:var(--f-disp);font-weight:var(--disp-w);
+  letter-spacing:var(--disp-ls)}
+.why{font-size:12.5px;color:var(--ink-2);margin:0 0 13px;max-width:42ch}
+
+/* phone */
+.ph{width:100%;max-width:332px;background:var(--surface);backdrop-filter:var(--glass,none);
+  border:var(--line-w) solid var(--line);border-radius:calc(var(--r-card) + 12px);
+  box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
+  aspect-ratio:9/19.5;transition:all .35s}
+.sb{display:flex;justify-content:space-between;padding:12px 18px 4px;font-size:10.5px;
+  color:var(--ink-3);flex:none;font-weight:600}
+.bd{flex:1;overflow:hidden;padding:8px 15px 14px;display:flex;flex-direction:column;
+  background-image:var(--rule-lines);background-position:0 8px}
+.tb{flex:none;display:flex;border-top:var(--line-w) solid var(--line)}
+.tb div{flex:1;padding:10px 0 13px;text-align:center;font-size:9px;font-weight:700;
+  letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+.tb div.on{color:var(--accent)}
+
+/* laid-out slots (C's best idea, skinned) */
+.slots{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.slot{display:flex;align-items:center;gap:12px;padding:12px 13px;background:var(--surface-2);
+  border:var(--line-w) solid var(--line);border-radius:var(--r-field);
+  transform:rotate(var(--card-tilt));position:relative}
+.slot:nth-child(even){transform:rotate(calc(var(--card-tilt) * -1))}
+.slot .art{width:34px;height:34px;flex:none;display:grid;place-items:center;font-size:26px}
+.slot .g{flex:1;min-width:0}
+.slot .t{font-size:14px;font-weight:650;line-height:1.2}
+.slot .s{font-size:10.5px;color:var(--ink-3);margin-top:2px}
+.slot .tick{width:24px;height:24px;border:1.8px solid var(--line);border-radius:calc(var(--r-field)/2.2);
+  flex:none;display:grid;place-items:center;color:transparent;background:var(--surface)}
+.slot .tick.on{background:var(--armed);border-color:var(--armed);color:var(--on-accent)}
+.slot.off .art{opacity:.32}
+.slot.off .t{text-decoration:line-through;text-decoration-color:var(--urgent);
+  text-decoration-thickness:2px}
+
+.alarm{display:flex;align-items:center;gap:12px;padding:11px 0;
+  border-top:var(--line-w) solid var(--line)}
+.alarm .tm{font-size:16px;font-weight:750;width:54px;flex:none;font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em}
+.alarm .g{flex:1;min-width:0}
+.alarm .a1{font-size:12.5px;font-weight:600}
+.alarm .a2{font-size:10px;color:var(--ink-3);margin-top:2px;text-transform:var(--kick-tt);
+  letter-spacing:var(--kick-ls)}
+.sw{width:38px;height:23px;border-radius:var(--r-pill);background:var(--armed);position:relative;
+  flex:none;border:var(--line-w) solid var(--line)}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:15px;height:15px;
+  border-radius:var(--r-pill);background:var(--surface)}
+.sw.off{background:var(--surface-2)}
+.sw.off::after{right:auto;left:3px;background:var(--ink-3)}
+
+/* review card */
+.card{background:var(--surface);border:var(--line-w) solid var(--line);
+  border-radius:var(--r-card);padding:14px 15px;box-shadow:var(--shadow);position:relative;
+  overflow:hidden;transform:rotate(var(--card-tilt));backdrop-filter:var(--glass,none)}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--dated)}
+.card.tape::after{content:"";display:var(--tape);position:absolute;top:-9px;left:50%;
+  width:74px;height:20px;transform:translateX(-50%) rotate(-2deg);
+  background:rgba(214,199,150,.55);border-left:1px dashed rgba(0,0,0,.08);
+  border-right:1px dashed rgba(0,0,0,.08)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;
+  letter-spacing:.07em;padding:4px 9px;border-radius:var(--r-pill);background:var(--accent-soft);
+  color:var(--dated);text-transform:uppercase}
+.when{font-size:17px;font-weight:750;letter-spacing:-.02em;margin:10px 0 3px;
+  font-family:var(--f-disp)}
+.from{font-size:10px;color:var(--ink-3);display:flex;align-items:center;gap:5px}
+.items{list-style:none;padding:0;margin:11px 0 0;display:flex;flex-direction:column;gap:8px}
+.items li{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.33}
+.items .ic{color:var(--ink-3);font-size:15px;margin-top:1px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;
+  letter-spacing:.06em;padding:4px 9px;border-radius:var(--r-pill);background:var(--urgent-soft);
+  color:var(--urgent);margin-left:6px;text-transform:uppercase}
+.acts{display:flex;gap:8px;margin-top:13px}
+.btn{flex:1;font:inherit;font-size:12.5px;font-weight:700;padding:11px 0;
+  border-radius:var(--r-pill);border:var(--line-w) solid var(--line);background:var(--surface-2);
+  color:var(--ink-2);cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.hint{font-size:10px;color:var(--ink-3);text-align:center;margin-top:9px}
+
+/* lock */
+.lock{flex:1;margin:-8px -15px -14px;background:var(--lock-bg);color:var(--lock-ink);
+  display:flex;flex-direction:column;background-image:none}
+.lock .clk{text-align:center;padding:28px 0 22px;flex:none}
+.lock .clk .t{font-size:54px;font-weight:250;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums;font-family:var(--f-disp)}
+.lock .clk .d{font-size:11px;opacity:.7;margin-top:7px;letter-spacing:var(--kick-ls);
+  text-transform:var(--kick-tt)}
+.nt{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);border-radius:var(--r-field);
+  padding:11px 13px;margin:0 13px 8px;border:var(--line-w) solid rgba(255,255,255,.14)}
+.nt.pri{border-color:var(--accent)}
+.nt .h{display:flex;gap:7px;font-size:9.5px;opacity:.78;margin-bottom:5px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase}
+.nt .h .ts{margin-left:auto}
+.nt .ti{font-weight:750;font-size:13.5px;margin-bottom:3px;letter-spacing:-.015em}
+.nt .b{font-size:12px;opacity:.9;line-height:1.35}
+.nt .tsg{font-size:8.5px;font-weight:800;padding:2px 6px;border-radius:5px;
+  background:var(--accent);color:var(--on-accent);letter-spacing:.07em}
+
+/* docs */
+.doc{margin-top:60px;max-width:76ch}
+.doc h2{font-family:var(--f-disp);font-weight:var(--disp-w);letter-spacing:var(--disp-ls);
+  font-size:21px;margin-top:36px}
+.doc h3{font-size:14.5px;margin-top:26px}
+.doc p,.doc li{font-size:14px;color:var(--ink-2)}
+.doc b{color:var(--ink)}
+.doc code{background:var(--surface-2);padding:1.5px 6px;border-radius:6px;font-size:12.5px;
+  border:var(--line-w) solid var(--line)}
+pre{background:var(--surface-2);border:var(--line-w) solid var(--line);
+  border-radius:var(--r-field);padding:15px 17px;overflow-x:auto;font-size:12.5px;
+  line-height:1.55;color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:var(--line-w) solid var(--line);
+  vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:800}
+td:first-child{color:var(--ink);font-weight:600;width:22%}
+@media (max-width:700px){.trio{grid-template-columns:1fr}.ph{max-width:100%}}
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="shirt" viewBox="0 0 24 24"><path d="M9 3 3 6l2 4 2-1v12h10V9l2 1 2-4-6-3-3 2Z"/></symbol>
+  <symbol id="box" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18M9 8V6h6v2"/></symbol>
+  <symbol id="bag" viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M4 13l5 5L20 6"/></symbol>
+  <symbol id="mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="warn" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4M12 17h.01"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brow">
+    <div class="mk"><svg class="i"><use href="#bell"/></svg></div>
+    <h1>MissNothing — skin gallery
+      <small>Same markup, seven skins. Tap one; everything below re-themes live.</small></h1>
+  </div>
+  <div class="picker" id="picker"></div>
+</header>
+
+<main>
+  <div class="lede">
+    <p>Three new skins here — <b>Aurora</b>, <b>Notebook</b>, <b>Dawn/Dusk</b> — plus the
+      three earlier directions, all driving the <b>same three screens</b>. Nothing in the
+      markup knows which skin is active.</p>
+    <div class="pull">
+      That is the answer to your second question. A skin toggle is genuinely cheap — but only
+      for <b>tokens</b>: colour, type, radius, shadow, borders, background. It cannot swap
+      <b>architecture</b>. Direction B's statement-first home and Direction A's card queue are
+      different widget trees, not different themes.
+    </div>
+    <p>So the shippable version is: <b>one layout, many skins.</b> Pick the architecture once,
+      then let the toggle carry as many looks as you like.</p>
+  </div>
+
+  <div class="trio">
+    <section>
+      <div class="cap"><span class="n">01</span><h2>Tomorrow, laid out</h2></div>
+      <p class="why">Home screen, carrying C's laid-out ticks and B's visible armed alarms.
+        Watch the crossed-out school bag survive every skin — that's the rule about not
+        signalling meaning by colour alone doing its job.</p>
+      <div class="ph">
+        <div class="sb"><span>20:04</span><span>▪ ▪ ▪</span></div>
+        <div class="bd">
+          <div class="kick">Tomorrow · Wed 19 Aug</div>
+          <div class="disp" style="font-size:27px;margin:7px 0 3px">Put it out<br>tonight.</div>
+          <div class="kick" style="color:var(--accent)">2 of 3 out</div>
+          <div class="slots">
+            <div class="slot"><div class="art" style="color:var(--dated)">
+              <svg class="i"><use href="#shirt"/></svg></div>
+              <div class="g"><div class="t">Tricolour outfit</div>
+                <div class="s">Saffron, white or green</div></div>
+              <div class="tick on"><svg class="i" style="font-size:13px"><use href="#check"/></svg></div></div>
+            <div class="slot"><div class="art" style="color:var(--armed)">
+              <svg class="i"><use href="#box"/></svg></div>
+              <div class="g"><div class="t">Snacks bag</div>
+                <div class="s">This only</div></div>
+              <div class="tick on"><svg class="i" style="font-size:13px"><use href="#check"/></svg></div></div>
+            <div class="slot off"><div class="art"><svg class="i"><use href="#bag"/></svg></div>
+              <div class="g"><div class="t">School bag</div>
+                <div class="s">Leave at home — Bagless Day</div></div>
+              <div class="tick"></div></div>
+          </div>
+          <div class="kick" style="margin-top:18px">Alarms armed</div>
+          <div class="alarm"><div class="tm">20:00</div>
+            <div class="g"><div class="a1">Put it out</div><div class="a2">Tonight</div></div>
+            <div class="sw"></div></div>
+          <div class="alarm"><div class="tm">06:30</div>
+            <div class="g"><div class="a1">Need to know by</div>
+              <div class="a2">Time sensitive</div></div><div class="sw"></div></div>
+        </div>
+        <div class="tb"><div class="on">Tomorrow</div><div>Review 3</div><div>Week</div><div>Set</div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="cap"><span class="n">02</span><h2>Review — gold-01</h2></div>
+      <p class="why">The dated card. Notebook adds tape and a half-degree tilt; Riso adds a
+        hard offset shadow; Aurora and Dusk go glassy. Same DOM in all seven.</p>
+      <div class="ph">
+        <div class="sb"><span>20:01</span><span>▪ ▪ ▪</span></div>
+        <div class="bd">
+          <div class="kick" style="margin-bottom:12px">Synced 2 min ago · 3 to review</div>
+          <div class="card tape">
+            <span class="tag"><svg class="i"><use href="#cal"/></svg> On a day</span>
+            <div class="when">Tomorrow · Wed 19 Aug</div>
+            <div class="from"><svg class="i"><use href="#mail"/></svg>
+              vnspreprimary@vidyaniketanhebbal.org</div>
+            <ul class="items">
+              <li><svg class="i ic"><use href="#shirt"/></svg>
+                <span>ethnic outfit in the tricolour theme (saffron, white, or green)</span></li>
+              <li><svg class="i ic"><use href="#box"/></svg>
+                <span>Bagless Day. Kindly send your child with only their snacks bag</span></li>
+            </ul>
+            <div class="acts">
+              <button class="btn">Bin</button>
+              <button class="btn">Later</button>
+              <button class="btn pri">Put out</button>
+            </div>
+            <p class="hint">Swipe right to put out · left to bin</p>
+          </div>
+          <div style="margin-top:14px" class="card">
+            <span class="tag" style="color:var(--decision);background:var(--surface-2)">Interested?</span>
+            <span class="badge"><svg class="i" style="font-size:10px"><use href="#warn"/></svg> Act today</span>
+            <div class="when" style="font-size:15px">Pre-loved sweaters</div>
+          </div>
+        </div>
+        <div class="tb"><div>Tomorrow</div><div class="on">Review 3</div><div>Week</div><div>Set</div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="cap"><span class="n">03</span><h2>Lock screen</h2></div>
+      <p class="why">Each skin carries its own lock gradient, but the notification structure
+        never changes — items, never a holiday title, sanitised at render.</p>
+      <div class="ph">
+        <div class="sb"><span>6:30</span><span>▪ ▪ ▪</span></div>
+        <div class="bd" style="padding:0">
+          <div class="lock">
+            <div class="clk"><div class="t">6:30</div><div class="d">Wed 19 August</div></div>
+            <div class="nt pri"><div class="h"><span>MissNothing</span>
+              <span class="tsg">Time sensitive</span><span class="ts">now</span></div>
+              <div class="ti">Today — school</div>
+              <div class="b">Tricolour ethnic outfit · No school bag, snacks bag only</div></div>
+            <div class="nt"><div class="h"><span>MissNothing</span><span class="ts">6:15</span></div>
+              <div class="ti">Today: 2 things</div>
+              <div class="b">Tap to sync — anything that arrived overnight</div></div>
+            <div class="nt"><div class="h"><span>MissNothing</span><span class="ts">yest 20:00</span></div>
+              <div class="ti">Tomorrow: outfit + bagless</div>
+              <div class="b">Put it out tonight</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="doc">
+    <h2>Can the app ship several looks with a Settings toggle?</h2>
+    <p>Yes, and it's one of the cheapest features you could add — <em>provided</em> you keep
+      the line between a skin and a layout.</p>
+
+    <table>
+      <tr><th></th><th>A skin can change</th><th>A skin cannot change</th></tr>
+      <tr><td>Examples</td>
+        <td>Colour, gradients, type family and weight, corner radius, border width, shadow,
+          light/dark, iconography weight, lock-screen background</td>
+        <td>Which screen is home, whether triage is a stack or a list, whether alarms are
+          visible, tab structure, navigation, what a gesture does</td></tr>
+      <tr><td>Cost</td>
+        <td>Effectively zero once the token contract exists. A new skin is one file of values.</td>
+        <td>A second widget tree, a second set of tests, and twice the surface for bugs.</td></tr>
+      <tr><td>Verdict</td>
+        <td>Ship as many as you enjoy.</td>
+        <td>Pick one. Revisit in v2 if you must.</td></tr>
+    </table>
+
+    <h3>How it works in Flutter</h3>
+    <p>Material 3 already has the mechanism — <code>ThemeExtension</code>. Define the token
+      contract once, then a skin is a value object:</p>
+<pre>@immutable
+class MnTokens extends ThemeExtension&lt;MnTokens&gt; {
+  const MnTokens({
+    required this.dated, required this.undated, required this.decision,
+    required this.urgent, required this.armed,
+    required this.cardRadius, required this.borderWidth,
+    required this.cardShadow, required this.lockGradient,
+    required this.displayFamily,
+  });
+  final Color dated, undated, decision, urgent, armed;
+  final double cardRadius, borderWidth;
+  final List&lt;BoxShadow&gt; cardShadow;
+  final Gradient lockGradient;
+  final String? displayFamily;
+  // copyWith + lerp omitted — lerp is what animates the change.
+}
+
+enum AppSkin { hearth, instrument, riso, aurora, notebook, dawnDusk }
+
+final skinProvider = StateNotifierProvider&lt;SkinController, AppSkin&gt;(...);
+
+ThemeData themeFor(AppSkin skin, Brightness b) =&gt; ThemeData(
+  colorScheme: ColorScheme.fromSeed(seedColor: _seed[skin]!, brightness: b),
+  extensions: [_tokens[skin]!],
+);</pre>
+    <p>Then every widget reads <code>Theme.of(context).extension&lt;MnTokens&gt;()!</code> and
+      never names a colour. <code>MaterialApp</code> rebuilds on the provider change, and
+      because <code>lerp</code> is implemented the switch animates rather than snapping.</p>
+
+    <h3>The one discipline that makes or breaks it</h3>
+    <p><b>No widget may hardcode a colour, radius or shadow.</b> Not one. The moment a card
+      says <code>Color(0xFFC2410C)</code> instead of reading the token, that card is stuck in
+      Hearth forever and every other skin has a bug you'll find months later on someone else's
+      phone. Worth a lint or a CI grep for hex literals outside the skin files.</p>
+
+    <h3>Where a skin toggle genuinely earns its place here</h3>
+    <ul>
+      <li><b>Two parents, two tastes.</b> The likeliest second installer is your wife, on a
+        different phone, with different preferences. This costs you nothing and removes an
+        argument.</li>
+      <li><b>Dawn / Dusk can be automatic.</b> Not a preference — a function of the clock. The
+        app is used at 06:15 and 20:00; letting it look like the hour it's used in is the one
+        skin idea that is also a feature. Warm light before school, lamp light at bedtime.</li>
+      <li><b>It de-risks the choice you're making now.</b> You don't have to be right about
+        Hearth versus Aurora today. Ship two, watch which one you actually keep it on after a
+        month, delete the other.</li>
+    </ul>
+
+    <h3>Where it doesn't</h3>
+    <ul>
+      <li><b>Screenshots and support.</b> Every bug report arrives in a look you may not be
+        running. Log the active skin with any diagnostics.</li>
+      <li><b>Accessibility multiplies.</b> Contrast has to hold in all of them. Aurora's
+        glass over a gradient is the risky one — translucency plus soft ink is where WCAG
+        contrast quietly fails.</li>
+      <li><b>Notebook's cursive display font</b> is charming and a legibility risk at 06:30.
+        I'd cap it at the kicker and never use it for an item or a lock-screen line.</li>
+    </ul>
+
+    <h2>My picks from this batch</h2>
+    <table>
+      <tr><td>Aurora</td><td>The most immediately appealing of anything in the four files, and
+        it photographs well. Watch contrast on the glass, and it does sit close to the
+        calm/wellness shelf — the thing you rejected StillTime to avoid.</td></tr>
+      <tr><td>Notebook</td><td>The most <em>apt</em>. A school diary with tape and a teacher's
+        red pen is the actual artifact families use. Strongest emotional fit for the product;
+        keep the handwriting decorative only.</td></tr>
+      <tr><td>Dawn / Dusk</td><td>My favourite, because it isn't really a skin — it's the app
+        knowing what time it is. Warm morning light at 06:15, lamp light at 20:00. Delight
+        that costs one <code>if</code> statement.</td></tr>
+    </table>
+    <p><b>If I shipped three:</b> Dawn/Dusk as the automatic default, Hearth for anyone who
+      wants it flat and warm, Notebook as the charming option. Instrument and Riso stay as
+      documents rather than skins — Instrument is a different architecture and Riso will date.</p>
+  </div>
+</main>
+
+<script>
+const SKINS = [
+  ['dawn','Dawn',       '#E0651A'],
+  ['dusk','Dusk',       '#FFB25C'],
+  ['aurora','Aurora',   '#6C5CE7'],
+  ['notebook','Notebook','#D6372B'],
+  ['hearth','Hearth',   '#C2410C'],
+  ['riso','Riso',       '#FF5A36'],
+  ['instrument','Instrument','#FFB020'],
+];
+const picker = document.getElementById('picker');
+function paint(active){
+  picker.innerHTML = SKINS.map(([id,label,sw]) =>
+    `<button data-skin="${id}" aria-pressed="${id===active}">
+       <span class="sw" style="background:${sw}"></span>${label}</button>`).join('');
+}
+picker.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  document.documentElement.dataset.skin = b.dataset.skin;
+  paint(b.dataset.skin);
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+paint('aurora');
+</script>
+</body>
+</html>

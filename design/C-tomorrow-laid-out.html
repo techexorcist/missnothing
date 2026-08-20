@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MissNothing — Direction C: Tomorrow, Laid Out</title>
+<style>
+:root{
+  --paper:#FBF6EA; --paper-2:#F3EBD9; --ink:#1A1815; --ink-2:#6B6355; --ink-3:#A39885;
+  --coral:#FF5A36; --indigo:#2E3AD9; --lime:#B6E619; --amber:#FFB400; --plum:#8B2FB0;
+  --rule:#1A1815;
+  --display:"Georgia","Iowan Old Style",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.4;
+  -webkit-font-smoothing:antialiased}
+::selection{background:var(--lime)}
+
+/* ---- page ---- */
+header.top{border-bottom:2.5px solid var(--rule);padding:16px 20px;position:sticky;top:0;
+  background:var(--paper);z-index:30}
+.brow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mk{width:36px;height:36px;background:var(--coral);border:2.5px solid var(--rule);
+  display:grid;place-items:center;font-family:var(--display);font-size:19px;font-weight:700;
+  color:var(--paper);flex:none;transform:rotate(-3deg)}
+h1{margin:0;font-family:var(--display);font-size:20px;letter-spacing:-.02em;font-weight:700}
+h1 small{display:block;font-family:var(--sans);font-weight:500;font-size:11.5px;
+  color:var(--ink-2);letter-spacing:.01em;margin-top:3px}
+nav.chips{display:flex;gap:6px;overflow-x:auto;padding:13px 20px 0;scrollbar-width:none}
+nav.chips::-webkit-scrollbar{display:none}
+nav.chips a{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;white-space:nowrap;text-decoration:none;padding:6px 11px;
+  border:2px solid var(--rule);color:var(--ink);background:var(--paper)}
+nav.chips a:hover{background:var(--lime)}
+main{max-width:1260px;margin:0 auto;padding:28px 20px 90px}
+.intro{max-width:64ch}
+.intro p{font-size:14.5px;color:var(--ink-2);margin:.6em 0}
+.big-idea{border:2.5px solid var(--rule);background:var(--paper-2);padding:20px 22px;margin:24px 0}
+.big-idea h3{font-family:var(--display);font-size:22px;margin:0 0 9px;letter-spacing:-.02em}
+.big-idea p{margin:.45em 0;font-size:14px;color:var(--ink)}
+.big-idea b{background:var(--lime);padding:0 3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:44px 30px;
+  margin-top:40px}
+section.sc{scroll-margin-top:120px}
+.cap{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.cap .n{font-family:var(--mono);font-size:11px;font-weight:800;color:var(--coral)}
+.cap h2{font-family:var(--display);font-size:18px;margin:0;letter-spacing:-.02em}
+.why{font-size:12.8px;color:var(--ink-2);margin:0 0 14px;max-width:45ch}
+.why em{font-style:normal;font-weight:700;color:var(--ink);background:var(--amber);padding:0 3px}
+
+/* ---- phone ---- */
+.ph{width:100%;max-width:336px;aspect-ratio:9/19.5;background:var(--paper);
+  border:3px solid var(--rule);overflow:hidden;display:flex;flex-direction:column;position:relative;
+  box-shadow:7px 7px 0 var(--rule)}
+.sb{display:flex;justify-content:space-between;padding:11px 16px 5px;font-family:var(--mono);
+  font-size:9.5px;font-weight:700;letter-spacing:.05em;flex:none}
+.bd{flex:1;overflow:hidden;padding:8px 16px 14px;display:flex;flex-direction:column}
+.tb{flex:none;display:flex;border-top:2.5px solid var(--rule)}
+.tb div{flex:1;padding:10px 0 12px;text-align:center;font-family:var(--mono);font-size:8.5px;
+  font-weight:800;letter-spacing:.09em;border-right:2.5px solid var(--rule)}
+.tb div:last-child{border-right:none}
+.tb div.on{background:var(--lime)}
+
+.kicker{font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-2)}
+.disp{font-family:var(--display);letter-spacing:-.035em;font-weight:700;line-height:1.02}
+
+/* laid-out composition */
+.lay{flex:1;display:flex;flex-direction:column;gap:0;margin-top:12px}
+.slot{border:2.5px solid var(--rule);border-bottom-width:0;padding:11px 12px;display:flex;
+  align-items:center;gap:12px;position:relative}
+.slot:last-of-type{border-bottom-width:2.5px}
+.slot .art{width:44px;height:44px;flex:none;display:grid;place-items:center}
+.slot .art svg{width:40px;height:40px}
+.slot .g{flex:1;min-width:0}
+.slot .t{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.02em;
+  line-height:1.15}
+.slot .s{font-size:11px;color:var(--ink-2);margin-top:3px}
+.slot .tick{width:26px;height:26px;border:2.5px solid var(--rule);flex:none;display:grid;
+  place-items:center;background:var(--paper)}
+.slot .tick.on{background:var(--lime)}
+.slot.on{background:var(--paper-2)}
+.slot .cross{position:absolute;inset:0;pointer-events:none}
+.slot .cross svg{width:100%;height:100%}
+
+.stamp{position:absolute;right:12px;top:9px;font-family:var(--mono);font-size:8.5px;
+  font-weight:800;letter-spacing:.12em;border:2px solid var(--coral);color:var(--coral);
+  padding:3px 6px;transform:rotate(6deg);background:var(--paper)}
+
+/* kettle mode */
+.kettle{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;margin:-8px -16px -14px;padding:20px}
+.kettle.amber{background:var(--amber)}
+.kettle.lime{background:var(--lime)}
+.kettle.coral{background:var(--coral);color:var(--paper)}
+.kettle .w{font-family:var(--display);font-size:60px;font-weight:700;letter-spacing:-.05em;
+  line-height:.92}
+.kettle .sub{font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;margin-top:16px}
+.kettle .shapes{display:flex;gap:12px;margin-top:26px}
+.kettle .shapes svg{width:46px;height:46px}
+
+/* kid mode */
+.kid{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;margin:-8px -16px -14px;padding:22px;background:var(--indigo);
+  color:var(--paper)}
+.kid .hi{font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.16em}
+.kid .l{font-family:var(--display);font-size:34px;font-weight:700;letter-spacing:-.035em;
+  line-height:1.05;margin:14px 0 22px}
+.kid .colours{display:flex;gap:0;border:3px solid var(--paper);width:170px;height:52px}
+.kid .colours i{flex:1}
+.kid .foot{font-size:12.5px;margin-top:24px;opacity:.9}
+
+/* sorting */
+.sort{flex:1;display:flex;flex-direction:column;margin-top:10px}
+.loose{border:2.5px solid var(--rule);background:var(--paper);padding:12px 13px;
+  box-shadow:5px 5px 0 var(--rule);margin-bottom:14px;position:relative}
+.loose .ty{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.13em;
+  padding:3px 6px;border:2px solid var(--rule);display:inline-block;background:var(--amber)}
+.loose .ty.dec{background:var(--plum);color:var(--paper);border-color:var(--plum)}
+.loose .ty.nod{background:var(--paper);}
+.loose .h{font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:-.025em;
+  margin:9px 0 4px;line-height:1.15}
+.loose ul{list-style:none;margin:8px 0 0;padding:0 0 0 11px;border-left:3px solid var(--coral)}
+.loose ul li{font-size:12px;color:var(--ink-2);padding:2px 0;line-height:1.35}
+.loose .src{font-family:var(--mono);font-size:8.5px;color:var(--ink-3);margin-top:9px;
+  letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.place{display:flex;gap:8px;margin-top:12px}
+.place button{font:inherit;font-family:var(--mono);font-size:9.5px;font-weight:800;
+  letter-spacing:.08em;padding:11px 0;flex:1;border:2.5px solid var(--rule);cursor:pointer;
+  background:var(--paper)}
+.place button.go{background:var(--lime)}
+.place button.bin{background:var(--paper-2);color:var(--ink-2)}
+
+/* ribbon */
+.rib{flex:1;display:flex;flex-direction:column;margin-top:10px;overflow:hidden}
+.rline{display:flex;border:2.5px solid var(--rule);border-bottom:none;min-height:56px}
+.rline:last-child{border-bottom:2.5px solid var(--rule)}
+.rline .dd{width:52px;flex:none;border-right:2.5px solid var(--rule);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;padding:5px 0}
+.rline .dd .dw{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.1em}
+.rline .dd .dn{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.03em;
+  line-height:1}
+.rline.now .dd{background:var(--coral);color:var(--paper)}
+.rline .gg{flex:1;padding:9px 11px;display:flex;flex-direction:column;justify-content:center}
+.rline .gg .g1{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:-.02em;
+  line-height:1.2}
+.rline .gg .g2{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-2);margin-top:4px}
+.rline .icons{display:flex;gap:5px;padding:0 10px 0 0;align-items:center}
+.rline .icons svg{width:22px;height:22px}
+
+/* lock */
+.lk{flex:1;background:#15130F;margin:-8px -16px -14px;padding:0;display:flex;
+  flex-direction:column;color:var(--paper)}
+.lk .clk{text-align:center;padding:30px 0 22px}
+.lk .clk .t{font-family:var(--display);font-size:60px;font-weight:700;letter-spacing:-.05em;
+  line-height:1}
+.lk .clk .d{font-family:var(--mono);font-size:10px;letter-spacing:.14em;opacity:.6;margin-top:8px;
+  text-transform:uppercase}
+.nt{margin:0 13px 9px;border:2.5px solid var(--paper);background:#15130F;padding:11px 12px}
+.nt.hot{background:var(--coral);border-color:var(--coral);color:var(--paper)}
+.nt .hh{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.14em;
+  display:flex;gap:7px;margin-bottom:6px;opacity:.85}
+.nt .hh .ts{margin-left:auto}
+.nt .ti{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.025em;
+  line-height:1.15;margin-bottom:4px}
+.nt .b{font-size:12px;line-height:1.35;opacity:.92}
+.nt .shapes{display:flex;gap:7px;margin-top:9px}
+.nt .shapes svg{width:26px;height:26px}
+
+/* generic rows */
+.fr{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:2px solid var(--rule)}
+.fr .g{flex:1;min-width:0}
+.fr .f1{font-size:13px;font-weight:700}
+.fr .f2{font-size:11px;color:var(--ink-2);margin-top:2px}
+.fr .v{font-family:var(--mono);font-size:14px;font-weight:800}
+.bigb{width:100%;font:inherit;font-family:var(--mono);font-size:11px;font-weight:800;
+  letter-spacing:.14em;padding:15px 0;border:2.5px solid var(--rule);background:var(--lime);
+  cursor:pointer;margin-top:18px;box-shadow:5px 5px 0 var(--rule)}
+.bigb.hot{background:var(--coral);color:var(--paper)}
+.qbox{border:2.5px solid var(--rule);padding:13px;margin-bottom:12px;background:var(--paper-2)}
+.qbox .q1{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.02em}
+.qbox .q2{font-size:11.5px;color:var(--ink-2);margin-top:4px}
+
+table.cmp{width:100%;border-collapse:collapse;font-size:13px;margin-top:18px;
+  border:2.5px solid var(--rule)}
+table.cmp th,table.cmp td{text-align:left;padding:11px 12px;border-bottom:2px solid var(--rule);
+  vertical-align:top}
+table.cmp th{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+  font-weight:800;background:var(--paper-2)}
+table.cmp td:first-child{font-weight:700;width:20%}
+.toks{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px;margin-top:16px}
+.tk{border:2.5px solid var(--rule)}
+.tk .s{height:48px}
+.tk .l{padding:7px 9px;font-family:var(--mono);font-size:9px;border-top:2.5px solid var(--rule)}
+.tk .l b{display:block;font-family:var(--sans);font-size:11px;margin-bottom:2px;letter-spacing:0}
+footer{max-width:1260px;margin:0 auto;padding:0 20px 80px}
+footer h2{font-family:var(--display);font-size:20px;margin-top:38px;letter-spacing:-.02em}
+footer p,footer li{font-size:13.5px;color:var(--ink-2)}
+footer li{margin:.5em 0}
+footer b{color:var(--ink)}
+@media (max-width:700px){.grid{grid-template-columns:1fr}.ph{max-width:100%}}
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <!-- flat geometric garment/kit shapes: no illustration craft, just primitives -->
+  <symbol id="g-shirt" viewBox="0 0 48 48"><path d="M17 6 8 11l3 8 4-2v25h18V17l4 2 3-8-9-5-6 4Z"
+    fill="currentColor" stroke="#1A1815" stroke-width="2.5" stroke-linejoin="round"/></symbol>
+  <symbol id="g-bag" viewBox="0 0 48 48"><path d="M11 15h26l-2 27H13L11 15Z" fill="currentColor"
+    stroke="#1A1815" stroke-width="2.5" stroke-linejoin="round"/><path d="M18 15V11a6 6 0 0 1 12 0v4"
+    fill="none" stroke="#1A1815" stroke-width="2.5"/></symbol>
+  <symbol id="g-box" viewBox="0 0 48 48"><rect x="8" y="17" width="32" height="21" rx="3"
+    fill="currentColor" stroke="#1A1815" stroke-width="2.5"/><path d="M8 25h32M20 17v-4h8v4"
+    stroke="#1A1815" stroke-width="2.5" fill="none"/></symbol>
+  <symbol id="g-paper" viewBox="0 0 48 48"><path d="M13 6h15l8 8v28H13V6Z" fill="currentColor"
+    stroke="#1A1815" stroke-width="2.5" stroke-linejoin="round"/><path d="M28 6v8h8"
+    stroke="#1A1815" stroke-width="2.5" fill="none"/></symbol>
+  <symbol id="g-gift" viewBox="0 0 48 48"><rect x="8" y="19" width="32" height="22"
+    fill="currentColor" stroke="#1A1815" stroke-width="2.5"/><path d="M8 26h32M24 19v22"
+    stroke="#1A1815" stroke-width="2.5"/></symbol>
+  <symbol id="g-shoe" viewBox="0 0 48 48"><path d="M7 32h18l7-6 9 3v7H7v-4Z" fill="currentColor"
+    stroke="#1A1815" stroke-width="2.5" stroke-linejoin="round"/></symbol>
+  <symbol id="tick" viewBox="0 0 24 24"><path d="M4 13l5 5L20 6" fill="none" stroke="#1A1815"
+    stroke-width="3.4" stroke-linecap="round"/></symbol>
+  <symbol id="xout" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M4 4 96 96M96 4 4 96"
+    stroke="#FF5A36" stroke-width="3" fill="none"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brow">
+    <div class="mk">C</div>
+    <h1>Direction C — Tomorrow, Laid Out
+      <small>Editorial · object-first · the app is a picture of tomorrow, not a list of it</small></h1>
+  </div>
+  <nav class="chips">
+    <a href="#s0">00 Laid out</a><a href="#s1">01 Kettle</a><a href="#s2">02 Kid mode</a>
+    <a href="#s3">03 Lock</a><a href="#s4">04 Sorting</a><a href="#s5">05 Decision</a>
+    <a href="#s6">06 Ribbon</a><a href="#s7">07 Couldn't read</a><a href="#s8">08 Need-by</a>
+    <a href="#s9">09 Reconnect</a><a href="#s10">10 Settings</a><a href="#new">The new ideas</a>
+  </nav>
+</header>
+
+<main>
+  <div class="intro">
+    <p>A and B both answer "what do I need to know?". This one answers a different, more
+      physical question — <b>"is it out yet?"</b> — because that is the question a parent
+      actually acts on at 20:00 with a small child in the room.</p>
+
+    <div class="big-idea">
+      <h3>The premise</h3>
+      <p>Nobody misses colour dress because they didn't <em>know</em>. They miss it because at
+        07:12 the outfit isn't out and there is no time. Reading a card and doing the thing
+        are different acts, and every product in this space stops at the first one.</p>
+      <p>So Direction C adds a third state after <em>proposed</em> and <em>confirmed</em>:
+        <b>laid out</b>. The home screen is a picture of tomorrow — garment, box, bag, form —
+        with a tick per object. The 20:00 alarm doesn't say "review"; it says
+        <b>put it out now</b>. And it keeps asking until the ticks are filled.</p>
+      <p>Two consequences fall out. The interface becomes objects rather than text, which makes
+        it readable at arm's length and across a kitchen. And it becomes showable to the child,
+        which turns a chore into a bedtime ritual — the one audience every other app in this
+        category ignores.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+
+  <!-- 00 LAID OUT -->
+  <section class="sc" id="s0">
+    <div class="cap"><span class="n">00</span><h2>Tomorrow, laid out</h2></div>
+    <p class="why">The home screen. Not a list of what you were told — a picture of what has to
+      exist by the front door. <em>Two of three out</em> is the only progress bar that matters,
+      and a crossed-out school bag says "bagless" better than any sentence.</p>
+    <div class="ph">
+      <div class="sb"><span>20:04</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">Tomorrow · Wed 19 Aug</div>
+        <div class="disp" style="font-size:29px;margin:7px 0 2px">Put it out<br>tonight.</div>
+        <div class="kicker" style="color:var(--coral);margin-top:7px">2 of 3 out</div>
+        <div class="lay">
+          <div class="slot on"><div class="art" style="color:var(--amber)">
+            <svg><use href="#g-shirt"/></svg></div>
+            <div class="g"><div class="t">Tricolour outfit</div>
+              <div class="s">Ethnic · saffron, white or green</div></div>
+            <div class="tick on"><svg viewBox="0 0 24 24" style="width:15px;height:15px">
+              <use href="#tick"/></svg></div></div>
+          <div class="slot on"><div class="art" style="color:var(--lime)">
+            <svg><use href="#g-box"/></svg></div>
+            <div class="g"><div class="t">Snacks bag</div>
+              <div class="s">This only — nothing else</div></div>
+            <div class="tick on"><svg viewBox="0 0 24 24" style="width:15px;height:15px">
+              <use href="#tick"/></svg></div></div>
+          <div class="slot"><div class="art" style="color:var(--paper-2)">
+            <svg><use href="#g-bag"/></svg>
+            <div class="cross"><svg><use href="#xout"/></svg></div></div>
+            <div class="g"><div class="t">School bag</div>
+              <div class="s">Leave it at home — Bagless Day</div></div>
+            <div class="tick"></div></div>
+        </div>
+      </div>
+      <div class="tb"><div class="on">TOMORROW</div><div>SORT 3</div><div>TERM</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 01 KETTLE -->
+  <section class="sc" id="s1">
+    <div class="cap"><span class="n">01</span><h2>Kettle mode</h2></div>
+    <p class="why">One colour, one word, three shapes — readable at three metres from a phone
+      propped against the kettle at 06:30. Amber = something to do, lime = nothing needed,
+      coral = act now. <em>The whole screen is the signal.</em> Tap for detail.</p>
+    <div class="ph">
+      <div class="sb"><span>06:31</span><span>▪▪▪</span></div>
+      <div class="bd" style="padding:0">
+        <div class="kettle amber">
+          <div class="w">Orange,<br>white,<br>green.</div>
+          <div class="sub">And snacks bag only</div>
+          <div class="shapes">
+            <svg style="color:var(--paper)"><use href="#g-shirt"/></svg>
+            <svg style="color:var(--paper)"><use href="#g-box"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 KID MODE -->
+  <section class="sc" id="s2">
+    <div class="cap"><span class="n">02</span><h2>Kid mode</h2></div>
+    <p class="why">Turn the phone around at bedtime and show the child. No other product in
+      this category has a screen for the person the circular is actually about.
+      <em>It makes the child a second alarm</em> — and a four-year-old who knows it's tricolour
+      day will remind you at 06:15 whether or not your phone does.</p>
+    <div class="ph">
+      <div class="sb"><span>20:12</span><span>▪▪▪</span></div>
+      <div class="bd" style="padding:0">
+        <div class="kid">
+          <div class="hi">Tomorrow at school</div>
+          <div class="l">You're wearing<br>orange, white<br>or green!</div>
+          <div class="colours"><i style="background:var(--amber)"></i>
+            <i style="background:var(--paper)"></i><i style="background:var(--lime)"></i></div>
+          <div class="foot">And just your snacks bag —<br>no school bag tomorrow.</div>
+        </div>
+      </div>
+      <div class="tb"><div class="on">TOMORROW</div><div>SORT 3</div><div>TERM</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 03 LOCK -->
+  <section class="sc" id="s3">
+    <div class="cap"><span class="n">03</span><h2>Lock screen</h2></div>
+    <p class="why">The evening alarm's verb changes from <em>review</em> to <em>put it out</em>,
+      and it carries the object shapes so it's parseable without reading. The 06:30 alarm
+      only fires for objects still unticked — a laid-out outfit doesn't need shouting about.</p>
+    <div class="ph">
+      <div class="sb"><span>20:00</span><span>▪▪▪</span></div>
+      <div class="bd" style="padding:0">
+        <div class="lk">
+          <div class="clk"><div class="t">20:00</div><div class="d">Tue 18 August</div></div>
+          <div class="nt hot"><div class="hh"><span>MISSNOTHING</span><span class="ts">now</span></div>
+            <div class="ti">Put it out for tomorrow</div>
+            <div class="b">Tricolour outfit · snacks bag only · no school bag</div>
+            <div class="shapes"><svg style="color:var(--amber)"><use href="#g-shirt"/></svg>
+              <svg style="color:var(--lime)"><use href="#g-box"/></svg></div></div>
+          <div class="nt"><div class="hh"><span>MISSNOTHING</span><span class="ts">06:30 tmrw</span></div>
+            <div class="ti">1 thing still not out</div>
+            <div class="b">School bag stays home today</div></div>
+          <div class="nt"><div class="hh"><span>MISSNOTHING</span><span class="ts">Sat</span></div>
+            <div class="ti">2 new from school</div>
+            <div class="b">Wed 19 Aug · outfit + bag</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 SORTING -->
+  <section class="sc" id="s4">
+    <div class="cap"><span class="n">04</span><h2>Sorting, not reviewing</h2></div>
+    <p class="why">Proposals arrive as loose objects you <em>place</em> — into Tomorrow, into
+      Later, into the bin. Physical verbs, not database verbs. Add / Skip becomes
+      Put&nbsp;out / Later / Bin, which is what you were going to do anyway.</p>
+    <div class="ph">
+      <div class="sb"><span>20:01</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">3 loose · from school</div>
+        <div class="disp" style="font-size:24px;margin:6px 0 0">Where do<br>these go?</div>
+        <div class="sort">
+          <div class="loose" style="margin-top:14px">
+            <span class="ty">ON A DAY · WED 19</span>
+            <div class="h">Tricolour outfit + bagless</div>
+            <ul><li>ethnic outfit in the tricolour theme (saffron, white, or green)</li>
+                <li>Bagless Day. Kindly send your child with only their snacks bag</li></ul>
+            <div class="src">vnspreprimary@vidyaniketanhebbal.org</div>
+            <div class="place"><button class="bin">BIN</button><button>LATER</button>
+              <button class="go">PUT OUT</button></div>
+          </div>
+          <div class="loose" style="box-shadow:3px 3px 0 var(--rule);transform:scale(.97)">
+            <span class="ty nod">NO DAY GIVEN</span>
+            <div class="h">Consent form — at the earliest</div>
+          </div>
+        </div>
+      </div>
+      <div class="tb"><div>TOMORROW</div><div class="on">SORT 3</div><div>TERM</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 05 DECISION -->
+  <section class="sc" id="s5">
+    <div class="cap"><span class="n">05</span><h2>Decision</h2></div>
+    <p class="why">gold-02. A decision is not an object to lay out, so it gets a different
+      shape language — plum, no slots, a stamped deadline. <em>Act today</em> is a physical
+      stamp, angled, like something rubber-stamped onto paper.</p>
+    <div class="ph">
+      <div class="sb"><span>20:04</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">Decision · no date</div>
+        <div class="disp" style="font-size:26px;margin:7px 0 14px">Sweaters,<br>free.</div>
+        <div class="loose" style="margin:0">
+          <div class="stamp">ACT TODAY</div>
+          <span class="ty dec">INTERESTED?</span>
+          <ul style="border-left-color:var(--plum);margin-top:14px">
+            <li>pre-loved school sweaters available in sizes 4, 5, and 6 to give away</li>
+            <li>carton box at the center foyer</li>
+            <li>during dispersal — 15:15</li></ul>
+          <div class="src">vnspreprimary@vidyaniketanhebbal.org · 29 Jul</div>
+          <div class="place"><button class="bin">NO</button><button>MAYBE</button>
+            <button class="go">YES</button></div>
+        </div>
+        <p style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);
+          margin-top:12px">NO IS REMEMBERED. THIS WON'T COME BACK.</p>
+      </div>
+      <div class="tb"><div>TOMORROW</div><div class="on">SORT 3</div><div>TERM</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 06 RIBBON -->
+  <section class="sc" id="s6">
+    <div class="cap"><span class="n">06</span><h2>The term</h2></div>
+    <p class="why">Days as a ribbon with object shapes instead of text, so a week is scannable
+      in one look. You can see <em>a colour-dress day and a form due</em> without reading a
+      word. Moved dates get the coral stamp.</p>
+    <div class="ph">
+      <div class="sb"><span>20:07</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">August · this week</div>
+        <div class="rib">
+          <div class="rline now"><div class="dd"><div class="dw">TUE</div><div class="dn">18</div></div>
+            <div class="gg"><div class="g1">Nothing to send</div>
+              <div class="g2">3 loose to sort</div></div></div>
+          <div class="rline"><div class="dd"><div class="dw">WED</div><div class="dn">19</div></div>
+            <div class="gg"><div class="g1">Tricolour · snacks only</div>
+              <div class="g2">2 of 3 out</div></div>
+            <div class="icons"><svg style="color:var(--amber)"><use href="#g-shirt"/></svg>
+              <svg style="color:var(--lime)"><use href="#g-box"/></svg></div></div>
+          <div class="rline"><div class="dd"><div class="dw">FRI</div><div class="dn">21</div></div>
+            <div class="gg"><div class="g1">Sports Day — house colours</div>
+              <div class="g2" style="color:var(--coral)">MOVED FROM 20 AUG</div></div>
+            <div class="icons"><svg style="color:var(--indigo)"><use href="#g-shoe"/></svg></div></div>
+          <div class="rline"><div class="dd"><div class="dw">MON</div><div class="dn">24</div></div>
+            <div class="gg"><div class="g1">Consent form due</div>
+              <div class="g2">Not out yet</div></div>
+            <div class="icons"><svg style="color:var(--paper-2)"><use href="#g-paper"/></svg></div></div>
+        </div>
+      </div>
+      <div class="tb"><div>TOMORROW</div><div>SORT 3</div><div class="on">TERM</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 07 COULDN'T READ -->
+  <section class="sc" id="s7">
+    <div class="cap"><span class="n">07</span><h2>Couldn't read</h2></div>
+    <p class="why">Still brand-critical, still blunt. Framed as an <em>open drawer</em> — mail
+      we have but couldn't turn into objects. Sync-incomplete is stamped separately because
+      that one means we never received it at all.</p>
+    <div class="ph">
+      <div class="sb"><span>20:06</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">3 emails</div>
+        <div class="disp" style="font-size:25px;margin:7px 0 13px">We got these.<br>Couldn't
+          read them.</div>
+        <div class="loose" style="margin-bottom:13px;box-shadow:none;border-color:var(--coral);
+          background:var(--paper-2)">
+          <span class="ty" style="background:var(--coral);color:var(--paper);
+            border-color:var(--coral)">SYNC INCOMPLETE</span>
+          <div style="font-size:12px;margin-top:9px">Gmail has 12 from this sender. We stored
+            11. Tap to retry.</div></div>
+        <div class="fr" style="border-top:2px solid var(--rule)">
+          <svg style="width:26px;height:26px;color:var(--paper-2)"><use href="#g-paper"/></svg>
+          <div class="g"><div class="f1">Circular attached</div>
+            <div class="f2">18 Aug · PDF, empty body</div></div></div>
+        <div class="fr"><svg style="width:26px;height:26px;color:var(--paper-2)">
+          <use href="#g-paper"/></svg>
+          <div class="g"><div class="f1">Thank you for your support</div>
+            <div class="f2">14 Aug · no action found</div></div></div>
+        <div class="fr"><svg style="width:26px;height:26px;color:var(--paper-2)">
+          <use href="#g-paper"/></svg>
+          <div class="g"><div class="f1">Fee receipt — Term 2</div>
+            <div class="f2">11 Aug · no action found</div></div></div>
+      </div>
+      <div class="tb"><div>TOMORROW</div><div class="on">SORT 3</div><div>TERM</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 08 NEED BY -->
+  <section class="sc" id="s8">
+    <div class="cap"><span class="n">08</span><h2>Onboarding — asked as questions</hh2></div>
+    <p class="why">Setup as an interview, one question per box, in the app's own voice.
+      <em>"When is it too late?"</em> gets a truer answer than a time picker labelled
+      "need-by reminder".</p>
+    <div class="ph">
+      <div class="sb"><span>09:44</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">Setting up · 3 of 3</div>
+        <div class="disp" style="font-size:26px;margin:7px 0 15px">Three<br>questions.</div>
+        <div class="qbox"><div class="q1">When is it too late?</div>
+          <div class="q2">After this, there's no time to find an outfit.</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:9px">
+            <span style="font-family:var(--display);font-size:34px;font-weight:700;
+              letter-spacing:-.03em">06:30</span>
+            <span style="font-size:11px;color:var(--ink-2)">school at 08:00</span></div></div>
+        <div class="qbox"><div class="q1">When does school let out?</div>
+          <div class="q2">So "during dispersal" means something.</div>
+          <div style="font-family:var(--display);font-size:28px;font-weight:700;
+            letter-spacing:-.03em;margin-top:8px">15:30</div></div>
+        <div class="qbox" style="background:var(--paper)"><div class="q1">Remind you to put
+          things out?</div>
+          <div class="q2">Every evening at 20:00. Recommended.</div></div>
+        <button class="bigb">START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 RECONNECT -->
+  <section class="sc" id="s9">
+    <div class="cap"><span class="n">09</span><h2>Reconnect</h2></div>
+    <p class="why">Full-bleed coral. In this direction the failure is stated as an object
+      problem: <em>nothing will be laid out</em>, because that's the consequence a parent
+      feels, not "the token expired".</p>
+    <div class="ph">
+      <div class="sb"><span>07:02</span><span>▪▪▪</span></div>
+      <div class="bd" style="padding:0">
+        <div class="kettle coral">
+          <div class="w">Not<br>watching.</div>
+          <div class="sub" style="margin-top:20px">3 days since we read your mail</div>
+          <p style="font-size:13px;margin:22px 6px 0;line-height:1.45">Nothing new is being
+            read and nothing will be laid out. Google signed the app out — this happens if you
+            changed your password.</p>
+          <div style="width:100%;padding:0 4px"><button class="bigb"
+            style="background:var(--paper);color:var(--ink);box-shadow:5px 5px 0 rgba(0,0,0,.35)">
+            RECONNECT GMAIL</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 SETTINGS -->
+  <section class="sc" id="s10">
+    <div class="cap"><span class="n">10</span><h2>Settings</h2></div>
+    <p class="why">Same content as A and B; editorial treatment. The backup line is the only
+      coral thing, because it's the only unresolved risk on the screen.</p>
+    <div class="ph">
+      <div class="sb"><span>20:09</span><span>▪▪▪</span></div>
+      <div class="bd">
+        <div class="kicker">Synced 2 min ago</div>
+        <div class="disp" style="font-size:26px;margin:7px 0 14px">Settings</div>
+        <div class="fr" style="border-top:2px solid var(--rule)"><div class="g">
+          <div class="f1">Too late after</div></div><div class="v">06:30</div></div>
+        <div class="fr"><div class="g"><div class="f1">Put-it-out reminder</div></div>
+          <div class="v">20:00</div></div>
+        <div class="fr"><div class="g"><div class="f1">School / dispersal</div></div>
+          <div class="v">08:00 / 15:30</div></div>
+        <div class="fr"><div class="g"><div class="f1">Senders</div>
+          <div class="f2">1 domain · 2 addresses</div></div></div>
+        <div class="fr"><div class="g"><div class="f1">Kid mode</div>
+          <div class="f2">Big screen to show your child</div></div>
+          <div class="tick on" style="width:24px;height:24px">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px"><use href="#tick"/></svg></div></div>
+        <div class="fr"><div class="g"><div class="f1">Backup to Files</div>
+          <div class="f2" style="color:var(--coral);font-weight:700">NEVER — A LOST PHONE
+            LOSES EVERYTHING</div></div></div>
+      </div>
+      <div class="tb"><div>TOMORROW</div><div>SORT 3</div><div>TERM</div><div class="on">SET</div></div>
+    </div>
+  </section>
+
+  </div>
+
+  <section id="new" style="margin-top:56px">
+    <div class="cap"><span class="n">NEW</span><h2>What C invents that A and B don't have</h2></div>
+    <table class="cmp">
+      <tr><th>Idea</th><th>Why it matters</th><th>Cost</th></tr>
+      <tr><td>The "laid out" state</td>
+        <td>A third state after proposed and confirmed. Knowing was never the bottleneck —
+          the outfit not being out at 07:12 was. This is the only idea in any of the three
+          directions that attacks the actual failure rather than the information gap.</td>
+        <td>New field, new alarm logic, and it can nag. Needs a way to say "stop asking".</td></tr>
+      <tr><td>Objects instead of text</td>
+        <td>Readable at arm's length and across a kitchen. A crossed-out school bag says
+          "bagless" faster than any sentence, in any language.</td>
+        <td>A shape library — kept to flat primitives so it stays maintainable, but every new
+          item kind needs a shape or a fallback.</td></tr>
+      <tr><td>Kid mode</td>
+        <td>Makes the child a second alarm, and turns a chore into a bedtime ritual. No
+          competitor has a screen for the person the circular is about.</td>
+        <td>Extra surface, extra copy voice. Pure v1.1 scope unless it earns its way in.</td></tr>
+      <tr><td>Kettle mode</td>
+        <td>One colour, one word, three shapes at three metres. The phone becomes a sign
+          propped against the kettle at 06:30.</td>
+        <td>A second layout for the home screen, and a colour-only signal needs a text
+          fallback for accessibility.</td></tr>
+      <tr><td>Physical verbs</td>
+        <td>Put out / Later / Bin instead of Add / Skip / Maybe. Describes what you're
+          actually about to do rather than what the database does.</td>
+        <td>Free. Steal this one regardless of which direction wins.</td></tr>
+    </table>
+    <div class="kicker" style="margin-top:36px">Palette</div>
+    <div class="toks">
+      <div class="tk"><div class="s" style="background:#FBF6EA"></div>
+        <div class="l"><b>Paper</b>#FBF6EA</div></div>
+      <div class="tk"><div class="s" style="background:#1A1815"></div>
+        <div class="l"><b>Ink</b>#1A1815</div></div>
+      <div class="tk"><div class="s" style="background:#FF5A36"></div>
+        <div class="l"><b>Coral</b>#FF5A36</div></div>
+      <div class="tk"><div class="s" style="background:#FFB400"></div>
+        <div class="l"><b>Amber</b>#FFB400</div></div>
+      <div class="tk"><div class="s" style="background:#B6E619"></div>
+        <div class="l"><b>Lime</b>#B6E619</div></div>
+      <div class="tk"><div class="s" style="background:#2E3AD9"></div>
+        <div class="l"><b>Indigo</b>#2E3AD9</div></div>
+      <div class="tk"><div class="s" style="background:#8B2FB0"></div>
+        <div class="l"><b>Plum</b>#8B2FB0</div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <h2>Honest assessment</h2>
+  <p>This is the most opinionated of the three and the most likely to be wrong. Adventurous
+    means load-bearing bets, so here are the bets:</p>
+  <ul>
+    <li><b>The bet that pays regardless:</b> the laid-out state. Even inside Direction A's
+      warm cards, adding "is it out?" attacks the real failure. If you take one thing from
+      this file, take that.</li>
+    <li><b>The bet that might not:</b> objects over text. It's beautiful and fast when the
+      item is a shirt or a snack box. It degrades the moment a circular says "bring ₹200 for
+      the book fair" and there is no shape for that. Needs a graceful text fallback, and the
+      fallback will be most of the long tail.</li>
+    <li><b>The bet that's pure upside but pure scope:</b> kid mode. Genuinely novel, genuinely
+      delightful, entirely optional. v1.1 at the earliest.</li>
+    <li><b>The risk in the whole direction:</b> it is a strong aesthetic. Riso-poster
+      editorial will look dated in three years in a way A's warmth and B's restraint will not.
+      For a family app you'll use for a decade of schooling, that matters more than it would
+      for a product with a redesign budget.</li>
+  </ul>
+  <h2>If I had to choose</h2>
+  <p><b>A's palette and voice · B's architecture · C's laid-out state and physical verbs.</b>
+    Statement-first home showing tomorrow's objects with ticks, visible armed alarms beneath,
+    list triage with Put&nbsp;out / Later / Bin, warm and rounded rather than riso-loud. That
+    hybrid is what I'd actually build — but the three poles had to exist first for it to be a
+    choice rather than a guess.</p>
+</footer>
+</body>
+</html>

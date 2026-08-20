@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MissNothing — Direction B: Instrument</title>
+<style>
+:root{
+  --bg:#0B0C0E; --surface:#14161A; --surface-2:#1B1E24; --hair:#272B33; --hair-2:#363B45;
+  --ink:#F3F5F8; --ink-2:#98A1AE; --ink-3:#5C6472;
+  --signal:#FFB020; --signal-dim:#3A2A0C;
+  --critical:#FF5A5A; --critical-dim:#3D1717;
+  --armed:#34D399; --armed-dim:#0E2E22;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+[data-theme="light"]{
+  --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#F0F2F5; --hair:#E2E6EB; --hair-2:#CBD2DA;
+  --ink:#0B0C0E; --ink-2:#5C6472; --ink-3:#8A929E;
+  --signal:#B45309; --signal-dim:#FEF3C7;
+  --critical:#B91C1C; --critical-dim:#FEE2E2;
+  --armed:#047857; --armed-dim:#D1FAE5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.4;
+  -webkit-font-smoothing:antialiased}
+svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:square;stroke-linejoin:miter;flex:none}
+
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 90%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);padding:14px 20px}
+.brandrow{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.mark{width:30px;height:30px;border:1.5px solid var(--signal);color:var(--signal);
+  display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:700;flex:none}
+h1{font-size:15px;margin:0;letter-spacing:-.01em;font-weight:650}
+h1 small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-2);letter-spacing:.02em;
+  margin-top:2px}
+.spacer{flex:1}
+button.ghost{font:inherit;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:8px 13px;border:1px solid var(--hair-2);background:transparent;color:var(--ink-2);cursor:pointer}
+button.ghost:hover{color:var(--signal);border-color:var(--signal)}
+nav.chips{display:flex;gap:0;overflow-x:auto;padding:12px 20px 0;scrollbar-width:none}
+nav.chips::-webkit-scrollbar{display:none}
+nav.chips a{font-family:var(--mono);font-size:11px;white-space:nowrap;text-decoration:none;
+  padding:6px 11px;color:var(--ink-3);border-bottom:1.5px solid transparent}
+nav.chips a:hover{color:var(--signal);border-bottom-color:var(--signal)}
+
+main{max-width:1240px;margin:0 auto;padding:26px 20px 80px}
+.intro{max-width:68ch;margin:0 0 32px}
+.intro p{color:var(--ink-2);font-size:14px;margin:.6em 0}
+.thesis{border-left:2px solid var(--signal);padding:2px 0 2px 16px;margin:22px 0}
+.thesis b{color:var(--signal)}
+.lbl{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:38px 28px}
+section.screen{scroll-margin-top:110px}
+.cap{display:flex;align-items:baseline;gap:10px;margin:0 0 5px}
+.cap .n{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--signal)}
+.cap h2{font-size:14.5px;margin:0;font-weight:650;letter-spacing:-.01em}
+.why{font-size:12.5px;color:var(--ink-2);margin:0 0 13px;max-width:44ch}
+.why em{color:var(--ink);font-style:normal;font-weight:600}
+
+/* phone */
+.phone{width:100%;max-width:334px;aspect-ratio:9/19.5;background:var(--surface);
+  border:1px solid var(--hair);overflow:hidden;display:flex;flex-direction:column;position:relative}
+.sb{display:flex;justify-content:space-between;padding:12px 18px 4px;
+  font-family:var(--mono);font-size:10px;color:var(--ink-3);flex:none;letter-spacing:.04em}
+.hd{padding:8px 18px 14px;flex:none;border-bottom:1px solid var(--hair)}
+.hd .k{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.16em;
+  color:var(--ink-3);text-transform:uppercase}
+.hd h3{margin:5px 0 0;font-size:19px;font-weight:650;letter-spacing:-.025em}
+.bd{flex:1;overflow-y:auto;padding:14px 18px}
+.bd.mid{display:flex;flex-direction:column;justify-content:center;text-align:left}
+.tb{flex:none;display:flex;border-top:1px solid var(--hair)}
+.tb div{flex:1;padding:11px 0 13px;text-align:center;font-family:var(--mono);font-size:9px;
+  font-weight:700;letter-spacing:.1em;color:var(--ink-3)}
+.tb div.on{color:var(--signal);box-shadow:inset 0 1.5px 0 var(--signal)}
+
+/* statement (the structural idea) */
+.stmt{padding:6px 0 2px}
+.stmt .d{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--signal);
+  font-weight:700;text-transform:uppercase}
+.stmt .big{font-size:37px;line-height:1.03;font-weight:700;letter-spacing:-.045em;margin:9px 0 0}
+.stmt .big span{color:var(--ink-3)}
+.stmt ul{list-style:none;padding:0;margin:20px 0 0}
+.stmt ul li{font-size:18px;font-weight:600;letter-spacing:-.015em;padding:11px 0;
+  border-top:1px solid var(--hair);display:flex;gap:11px;align-items:flex-start;line-height:1.28}
+.stmt ul li .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:6px;flex:none}
+
+/* alarm rows — the alarm-clock metaphor */
+.alarm{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--hair)}
+.alarm .t{font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;flex:none;width:56px}
+.alarm .g{flex:1;min-width:0}
+.alarm .g .a1{font-size:12.5px;font-weight:600}
+.alarm .g .a2{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.04em;
+  text-transform:uppercase;margin-top:2px}
+.sw{width:38px;height:22px;border:1px solid var(--armed);background:var(--armed-dim);
+  position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:14px;height:14px;background:var(--armed)}
+.sw.off{border-color:var(--hair-2);background:transparent}
+.sw.off::after{right:auto;left:3px;background:var(--hair-2)}
+
+/* review rows — triage, not a card stack */
+.rev{border-top:1px solid var(--hair);padding:13px 0}
+.rev:first-child{border-top:none}
+.rev .top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.rev .type{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.14em;
+  padding:3px 7px;border:1px solid var(--hair-2);color:var(--ink-2)}
+.rev.dated .type{border-color:var(--signal);color:var(--signal)}
+.rev.dec .type{border-style:dashed}
+.rev .when{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:auto;
+  letter-spacing:.04em}
+.rev .head{font-size:15px;font-weight:650;letter-spacing:-.015em;line-height:1.25}
+.rev ul{list-style:none;padding:0;margin:8px 0 0;border-left:2px solid var(--hair);padding-left:11px}
+.rev ul li{font-size:12.5px;color:var(--ink-2);padding:3px 0;line-height:1.35}
+.rev .acts{display:flex;gap:7px;margin-top:11px}
+.rev .acts button{font:inherit;font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:.1em;padding:9px 0;flex:1;border:1px solid var(--hair-2);background:transparent;
+  color:var(--ink-2);cursor:pointer}
+.rev .acts button.yes{border-color:var(--signal);color:var(--signal)}
+.rev .acts button.yes:hover{background:var(--signal-dim)}
+.rev .src{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:8px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.flag{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;
+  font-weight:700;letter-spacing:.12em;padding:3px 7px;background:var(--critical-dim);
+  color:var(--critical);border:1px solid var(--critical)}
+.note{border:1px solid var(--critical);background:var(--critical-dim);color:var(--critical);
+  padding:11px 12px;font-size:12px;display:flex;gap:9px;align-items:flex-start;margin-bottom:13px}
+.note.calm{border-color:var(--hair-2);background:var(--surface-2);color:var(--ink-2)}
+.fld{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--hair)}
+.fld .g{flex:1;min-width:0}
+.fld .f1{font-size:13px;font-weight:600}
+.fld .f2{font-size:11px;color:var(--ink-3);margin-top:2px}
+.fld .v{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--signal);
+  font-variant-numeric:tabular-nums;flex:none}
+.big-btn{width:100%;font:inherit;font-family:var(--mono);font-size:11.5px;font-weight:700;
+  letter-spacing:.14em;padding:14px 0;border:1.5px solid var(--signal);background:transparent;
+  color:var(--signal);cursor:pointer;margin-top:16px}
+.big-btn:hover{background:var(--signal-dim)}
+.big-btn.crit{border-color:var(--critical);color:var(--critical)}
+.miss{border-top:1px solid var(--hair);padding:11px 0;display:flex;gap:11px}
+.miss .m1{font-size:12.5px;font-weight:600;line-height:1.3}
+.miss .m2{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:3px;
+  letter-spacing:.04em;text-transform:uppercase}
+.ag{display:flex;gap:14px;padding:13px 0;border-top:1px solid var(--hair)}
+.ag .dt{font-family:var(--mono);font-size:10px;color:var(--ink-3);width:42px;flex:none;
+  letter-spacing:.06em;padding-top:3px;text-transform:uppercase}
+.ag.now .dt{color:var(--signal)}
+.ag .g .a1{font-size:14px;font-weight:600;letter-spacing:-.015em;line-height:1.28}
+.ag .g .a2{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:4px;
+  letter-spacing:.06em;text-transform:uppercase}
+
+/* lock */
+.lockbd{background:#000;flex:1;display:flex;flex-direction:column;padding:0}
+[data-theme="light"] .lockbd{background:#101215}
+.lockbd .clk{text-align:center;padding:30px 0 26px;color:#fff;flex:none}
+.lockbd .clk .t{font-family:var(--mono);font-size:56px;font-weight:250;letter-spacing:-.04em;
+  line-height:1;font-variant-numeric:tabular-nums}
+.lockbd .clk .d{font-family:var(--mono);font-size:10.5px;opacity:.6;margin-top:8px;
+  letter-spacing:.14em;text-transform:uppercase}
+.nt{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
+  backdrop-filter:blur(8px);padding:11px 12px;margin:0 13px 8px;color:#fff}
+.nt.pri{border-color:var(--signal)}
+.nt .h{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9px;
+  letter-spacing:.14em;opacity:.72;margin-bottom:6px;text-transform:uppercase}
+.nt .h .ts{margin-left:auto}
+.nt .ti{font-size:13.5px;font-weight:700;letter-spacing:-.015em;margin-bottom:3px}
+.nt .b{font-size:12px;opacity:.86;line-height:1.35}
+.nt .tsg{font-family:var(--mono);font-size:8px;padding:2px 5px;border:1px solid var(--signal);
+  color:var(--signal);letter-spacing:.1em}
+
+/* compare */
+table.cmp{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
+table.cmp th,table.cmp td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--hair);
+  vertical-align:top}
+table.cmp th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700}
+table.cmp td:first-child{color:var(--ink-2);width:24%}
+.toks{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:11px;margin-top:14px}
+.tk{border:1px solid var(--hair)}
+.tk .s{height:46px}
+.tk .l{padding:7px 9px;font-family:var(--mono);font-size:9.5px}
+.tk .l b{display:block;font-family:var(--sans);font-size:11px;margin-bottom:2px;letter-spacing:0}
+.tk .l span{color:var(--ink-3)}
+footer{max-width:1240px;margin:0 auto;padding:0 20px 70px;color:var(--ink-2);font-size:13px}
+footer h2{font-size:15px;color:var(--ink);font-weight:650;margin-top:34px}
+footer ul{padding-left:19px}
+footer li{margin:.45em 0}
+@media (max-width:700px){.grid{grid-template-columns:1fr}.phone{max-width:100%}}
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="warn" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4.5M12 17.2h.01"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M4 13l5 5L20 6"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brandrow">
+    <div class="mark">MN</div>
+    <h1>Direction B — Instrument
+      <small>Dark-first · status-first · typographic · alarms as objects</small></h1>
+    <div class="spacer"></div>
+    <button class="ghost" onclick="
+      document.documentElement.dataset.theme =
+        document.documentElement.dataset.theme==='dark'?'light':'dark'">Invert</button>
+  </div>
+  <nav class="chips">
+    <a href="#s0">00 Home</a><a href="#s1">01 Lock</a><a href="#s2">02 Gate</a>
+    <a href="#s3">03 Connect</a><a href="#s4">04 Senders</a><a href="#s5">05 Times</a>
+    <a href="#s6">06 Dated</a><a href="#s7">07 Undated</a><a href="#s8">08 Decision</a>
+    <a href="#s9">09 Edit</a><a href="#s10">10 Unread</a><a href="#s11">11 Agenda</a>
+    <a href="#s12">12 Open</a><a href="#s13">13 Settings</a><a href="#s14">14 Reconnect</a>
+    <a href="#cmp">Compare</a>
+  </nav>
+</header>
+
+<main>
+  <div class="intro">
+    <p>An alternative to Direction A, not a recolour. Same fourteen surfaces, same
+      content from gold-01 and gold-02 — but a different metaphor, a different
+      default mode, and one structural change to the information architecture.</p>
+    <div class="thesis">
+      <b>Thesis.</b> This is not a mail app with alarms bolted on; it is an
+      <em>instrument</em>. An alarm clock knows one thing and states it without being
+      asked. So the home screen is not an inbox of proposals to triage — it is a
+      full-bleed answer to "what does my kid need tomorrow", with the armed alarms
+      visible beneath it, exactly as a clock app shows you which alarms are set.
+      Review moves to a secondary surface, because triage is admin and admin is not
+      the product.
+    </div>
+    <p>Dark by default, because the two moments that matter are 20:00 and 06:15 and
+      both happen in a dark room. Near-monochrome, with one signal colour that only
+      ever means "you must act" — so it cannot become decoration.</p>
+  </div>
+
+  <div class="grid">
+
+  <!-- 00 HOME -->
+  <section class="screen" id="s0">
+    <div class="cap"><span class="n">00</span><h2>Home — the structural change</h2></div>
+    <p class="why">Direction A opens on a review queue. This opens on <em>the answer</em>.
+      Nothing to triage before you know what tomorrow needs. Alarms are visible objects with
+      toggles, so "is it actually going to wake me" is answerable at a glance.</p>
+    <div class="phone">
+      <div class="sb"><span>20:04</span><span>◼ ◼ ◼</span></div>
+      <div class="bd">
+        <div class="stmt">
+          <div class="d">Tomorrow · Wed 19 Aug</div>
+          <div class="big">Tricolour ethnic outfit.<br><span>And no school bag.</span></div>
+          <ul>
+            <li><span class="n">01</span><span>ethnic outfit in the tricolour theme
+              (saffron, white, or green)</span></li>
+            <li><span class="n">02</span><span>snacks bag only — Bagless Day</span></li>
+          </ul>
+        </div>
+        <div class="lbl" style="margin:24px 0 2px">Alarms armed</div>
+        <div class="alarm"><div class="t">20:00</div>
+          <div class="g"><div class="a1">Tonight — heads up</div>
+            <div class="a2">Evening before</div></div><div class="sw"></div></div>
+        <div class="alarm"><div class="t">06:30</div>
+          <div class="g"><div class="a1">Need to know by</div>
+            <div class="a2">Time sensitive</div></div><div class="sw"></div></div>
+        <div class="alarm"><div class="t">06:15</div>
+          <div class="g"><div class="a1">Morning check</div>
+            <div class="a2">Syncs on tap</div></div><div class="sw"></div></div>
+      </div>
+      <div class="tb"><div class="on">TODAY</div><div>REVIEW 3</div><div>WEEK</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 01 LOCK -->
+  <section class="screen" id="s1">
+    <div class="cap"><span class="n">01</span><h2>Lock screen</h2></div>
+    <p class="why">Same four notification types as Direction A, but typographically flatter and
+      mono-labelled — reads as instrument output rather than a social notification.</p>
+    <div class="phone">
+      <div class="sb"><span>06:30</span><span>◼ ◼ ◼</span></div>
+      <div class="lockbd">
+        <div class="clk"><div class="t">06:30</div><div class="d">Wed 19 August</div></div>
+        <div class="nt pri"><div class="h"><span>MissNothing</span>
+          <span class="tsg">TIME SENSITIVE</span><span class="ts">now</span></div>
+          <div class="ti">Today — school</div>
+          <div class="b">Tricolour ethnic outfit · No school bag, snacks bag only</div></div>
+        <div class="nt"><div class="h"><span>MissNothing</span><span class="ts">06:15</span></div>
+          <div class="ti">Today: 2 things</div>
+          <div class="b">Tap to sync — anything that arrived overnight</div></div>
+        <div class="nt"><div class="h"><span>MissNothing</span><span class="ts">yest 20:00</span></div>
+          <div class="ti">Tomorrow: outfit + bagless</div>
+          <div class="b">Ethnic outfit, tricolour · Snacks bag only</div></div>
+        <div class="nt"><div class="h"><span>MissNothing</span><span class="ts">Sat 14:45</span></div>
+          <div class="ti">2 new school items</div>
+          <div class="b">Wed 19 Aug: ethnic outfit · snacks bag only</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 GATE -->
+  <section class="screen" id="s2">
+    <div class="cap"><span class="n">02</span><h2>Gate</h2></div>
+    <p class="why">Instrument voice: says what is locked and why, without reassurance padding.</p>
+    <div class="phone">
+      <div class="sb"><span>06:29</span><span>◼ ◼ ◼</span></div>
+      <div class="bd mid">
+        <div class="lbl">Locked</div>
+        <div style="font-size:29px;font-weight:700;letter-spacing:-.035em;margin:12px 0 10px;
+          line-height:1.1">Today's items<br>are encrypted<br>on this phone.</div>
+        <p style="font-size:12.5px;color:var(--ink-2);margin:0">The key is released by Face ID
+          or your device PIN. Nothing is readable until then — not even by this app.</p>
+        <button class="big-btn"><svg class="i"><use href="#lock"/></svg> UNLOCK</button>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.08em;
+          margin-top:14px">USE DEVICE PIN</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 CONNECT -->
+  <section class="screen" id="s3">
+    <div class="cap"><span class="n">03</span><h2>Connect Gmail</h2></div>
+    <p class="why">Capabilities stated as a spec sheet, not as reassurance. Parents who care
+      about privacy read specs; parents who don't skip to the button either way.</p>
+    <div class="phone">
+      <div class="sb"><span>09:41</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Setup 1 / 3</div><h3>Connect Gmail</h3></div>
+      <div class="bd">
+        <div class="fld" style="border-top:none"><div class="g">
+          <div class="f1">Access</div><div class="f2">Read only. Cannot send, delete or edit.</div></div>
+          <svg class="i" style="font-size:16px;color:var(--armed)"><use href="#check"/></svg></div>
+        <div class="fld"><div class="g">
+          <div class="f1">Scope</div><div class="f2">Only senders you pick. Nothing else opened.</div></div>
+          <svg class="i" style="font-size:16px;color:var(--armed)"><use href="#check"/></svg></div>
+        <div class="fld"><div class="g">
+          <div class="f1">Storage</div><div class="f2">This phone only. We run no server.</div></div>
+          <svg class="i" style="font-size:16px;color:var(--armed)"><use href="#check"/></svg></div>
+        <div class="note calm" style="margin-top:16px">
+          <svg class="i" style="font-size:15px"><use href="#warn"/></svg>
+          <div>Google will say this app isn't verified. Expected for a family app —
+            choose <b>Advanced → Go to MissNothing</b>.</div></div>
+        <button class="big-btn">CONTINUE WITH GOOGLE</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 SENDERS -->
+  <section class="screen" id="s4">
+    <div class="cap"><span class="n">04</span><h2>Senders</h2></div>
+    <p class="why">Counts in mono, tabular — the screen reads as evidence. Headers only until
+      you switch one on.</p>
+    <div class="phone">
+      <div class="sb"><span>09:42</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Setup 2 / 3 · headers only</div><h3>Who sends circulars?</h3></div>
+      <div class="bd">
+        <div class="alarm" style="border-top:none"><div class="t" style="width:40px;
+          color:var(--signal)">31</div>
+          <div class="g"><div class="a1">vidyaniketanhebbal.org</div>
+            <div class="a2">2 senders · 90 days</div></div><div class="sw"></div></div>
+        <div class="alarm"><div class="t" style="width:40px">12</div>
+          <div class="g"><div class="a1">edunext.co</div>
+            <div class="a2">Fee receipts</div></div><div class="sw off"></div></div>
+        <div class="alarm"><div class="t" style="width:40px">3</div>
+          <div class="g"><div class="a1">bookfair-blr.in</div>
+            <div class="a2">Unclassified</div></div><div class="sw off"></div></div>
+        <button class="big-btn">NEXT — YOUR TIMES</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 TIMES -->
+  <section class="screen" id="s5">
+    <div class="cap"><span class="n">05</span><h2>Times</h2></div>
+    <p class="why">The whole reminder engine on one screen, in tabular mono. Need-by is asked
+      first and framed as a question about you, not a setting.</p>
+    <div class="phone">
+      <div class="sb"><span>09:44</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Setup 3 / 3</div><h3>When must you know?</h3></div>
+      <div class="bd">
+        <div class="fld" style="border-top:none"><div class="g">
+          <div class="f1">Need to know by</div>
+          <div class="f2">Morning alarm for today's items</div></div>
+          <div class="v">06:30</div></div>
+        <div class="lbl" style="margin:18px 0 0">School day</div>
+        <div class="fld"><div class="g"><div class="f1">Starts</div></div><div class="v">08:00</div></div>
+        <div class="fld"><div class="g"><div class="f1">Dispersal</div>
+          <div class="f2">"during dispersal" → 15:15</div></div><div class="v">15:30</div></div>
+        <div class="lbl" style="margin:18px 0 0">Briefings</div>
+        <div class="fld"><div class="g"><div class="f1">Tonight, about tomorrow</div></div>
+          <div class="v">20:00</div></div>
+        <div class="fld"><div class="g"><div class="f1">Morning, about today</div></div>
+          <div class="v">06:15</div></div>
+        <button class="big-btn">ARM ALARMS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 DATED -->
+  <section class="screen" id="s6">
+    <div class="cap"><span class="n">06</span><h2>Review — dated</h2></div>
+    <p class="why">A compact list, not a card stack. All three proposals visible at once with
+      inline actions — faster to clear than swiping one at a time, and you can see how much is
+      waiting. Type is a mono word plus a border, never colour alone.</p>
+    <div class="phone">
+      <div class="sb"><span>20:01</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Synced 2 min ago</div><h3>Review · 3</h3></div>
+      <div class="bd">
+        <div class="rev dated">
+          <div class="top"><span class="type">DATED</span><span class="when">TOMORROW · 19 AUG</span></div>
+          <div class="head">Tricolour outfit + bagless</div>
+          <ul><li>ethnic outfit in the tricolour theme (saffron, white, or green)</li>
+              <li>Bagless Day. Kindly send your child with only their snacks bag</li></ul>
+          <div class="src">vnspreprimary@vidyaniketanhebbal.org</div>
+          <div class="acts"><button>SKIP</button><button>EDIT</button>
+            <button class="yes">ADD</button></div>
+        </div>
+        <div class="rev">
+          <div class="top"><span class="type">NO DAY</span><span class="when">RECEIVED 18 AUG</span></div>
+          <div class="head">Consent form — return at the earliest</div>
+          <div class="acts"><button>SKIP</button><button>LATER</button>
+            <button class="yes">ADD</button></div>
+        </div>
+        <div class="rev dec">
+          <div class="top"><span class="type">DECISION</span>
+            <span class="flag">ACT TODAY</span></div>
+          <div class="head">Pre-loved sweaters</div>
+        </div>
+      </div>
+      <div class="tb"><div>TODAY</div><div class="on">REVIEW 3</div><div>WEEK</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 07 UNDATED -->
+  <section class="screen" id="s7">
+    <div class="cap"><span class="n">07</span><h2>Review — undated</h2></div>
+    <p class="why">Expanded row. No date is invented; instead the reminder choice becomes the
+      interaction, expressed as an alarm you are arming.</p>
+    <div class="phone">
+      <div class="sb"><span>20:03</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">No day given</div><h3>Consent form</h3></div>
+      <div class="bd">
+        <div class="rev" style="border:none;padding-top:0">
+          <ul style="margin-top:0"><li>kindly return the signed consent form at the
+            earliest</li></ul>
+          <div class="src">vnspreprimary@vidyaniketanhebbal.org · 18 Aug</div>
+        </div>
+        <div class="lbl" style="margin:14px 0 0">Remind me</div>
+        <div class="alarm"><div class="t">06:30</div>
+          <div class="g"><div class="a1">Tomorrow morning</div>
+            <div class="a2">With today's items</div></div><div class="sw"></div></div>
+        <div class="alarm"><div class="t">15:15</div>
+          <div class="g"><div class="a1">Today at dispersal</div>
+            <div class="a2">School pickup</div></div><div class="sw off"></div></div>
+        <div class="alarm"><div class="t">—</div>
+          <div class="g"><div class="a1">No reminder</div>
+            <div class="a2">Keep on the list only</div></div><div class="sw off"></div></div>
+        <button class="big-btn">ADD TO OPEN ITEMS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 DECISION -->
+  <section class="screen" id="s8">
+    <div class="cap"><span class="n">08</span><h2>Review — decision</h2></div>
+    <p class="why">gold-02. Act-today is the only place the critical colour appears on this
+      screen, so it cannot be mistaken for styling. Yes / No / Maybe as equal-weight mono
+      buttons — Maybe is a real answer, not a dodge.</p>
+    <div class="phone">
+      <div class="sb"><span>20:04</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Decision · no date</div><h3>Pre-loved sweaters</h3></div>
+      <div class="bd">
+        <span class="flag">ACT TODAY · FIRST COME</span>
+        <div class="rev" style="border:none;padding:13px 0 0">
+          <ul style="margin-top:0">
+            <li>pre-loved school sweaters available in sizes 4, 5, and 6 to give away</li>
+            <li>carton box at the center foyer</li></ul>
+          <div class="src">vnspreprimary@vidyaniketanhebbal.org · 29 Jul</div>
+        </div>
+        <div class="lbl" style="margin:18px 0 0">If yes</div>
+        <div class="alarm"><div class="t">15:15</div>
+          <div class="g"><div class="a1">At dispersal</div>
+            <div class="a2">From "during dispersal"</div></div><div class="sw"></div></div>
+        <div class="rev" style="border:none;padding:4px 0 0">
+          <div class="acts"><button>NO</button><button>MAYBE</button>
+            <button class="yes">YES</button></div></div>
+        <p style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.06em;
+          margin-top:11px">NO IS REMEMBERED — THIS WON'T RETURN</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 EDIT -->
+  <section class="screen" id="s9">
+    <div class="cap"><span class="n">09</span><h2>Edit</h2></div>
+    <p class="why">Shows the rejected date candidates explicitly. That turns editing into a
+      window on the parser's reasoning — the fastest way for you to spot a bad rule.</p>
+    <div class="phone">
+      <div class="sb"><span>20:05</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Dated · all day</div><h3>Wed 19 Aug</h3></div>
+      <div class="bd">
+        <div class="lbl">Dates found in this mail</div>
+        <div class="fld"><div class="g"><div class="f1">19 August</div>
+          <div class="f2">Chosen — bound by "we request you to send"</div></div>
+          <svg class="i" style="font-size:16px;color:var(--armed)"><use href="#check"/></svg></div>
+        <div class="fld"><div class="g"><div class="f1" style="color:var(--ink-3)">15 August</div>
+          <div class="f2">Rejected — letterhead issue date</div></div></div>
+        <div class="fld"><div class="g"><div class="f1" style="color:var(--ink-3)">34/MONT/2026-27</div>
+          <div class="f2">Rejected — reference number</div></div></div>
+        <div class="lbl" style="margin-top:18px">Items</div>
+        <div class="fld"><div class="g"><div class="f1" style="font-weight:500">ethnic outfit,
+          tricolour (saffron, white, green)</div></div></div>
+        <div class="fld"><div class="g"><div class="f1" style="font-weight:500">snacks bag only,
+          no school bag</div></div></div>
+        <button class="big-btn">SAVE AND ARM</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 UNREAD -->
+  <section class="screen" id="s10">
+    <div class="cap"><span class="n">10</span><h2>Couldn't read</h2></div>
+    <p class="why">Brand-critical, and blunter here. "Couldn't read" beats "nothing found" —
+      it puts the failure on the app rather than implying the mail was empty.</p>
+    <div class="phone">
+      <div class="sb"><span>20:06</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">3 school emails</div><h3>Couldn't read</h3></div>
+      <div class="bd">
+        <div class="note"><svg class="i" style="font-size:15px"><use href="#warn"/></svg>
+          <div><b>Sync incomplete.</b> Gmail has 12 from this sender. We stored 11.
+            <br>Tap to retry.</div></div>
+        <p style="font-size:11.5px;color:var(--ink-2);margin:0 0 4px">We received these and found
+          no date, task or decision. Nothing is hidden from you.</p>
+        <div class="miss"><div><div class="m1">Circular attached — open to read</div>
+          <div class="m2">18 Aug · PDF · empty body</div></div></div>
+        <div class="miss"><div><div class="m1">Thank you for your continued support</div>
+          <div class="m2">14 Aug · no action found</div></div></div>
+        <div class="miss"><div><div class="m1">Fee receipt — Term 2</div>
+          <div class="m2">11 Aug · no action found</div></div></div>
+      </div>
+      <div class="tb"><div>TODAY</div><div class="on">REVIEW</div><div>WEEK</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 11 AGENDA -->
+  <section class="screen" id="s11">
+    <div class="cap"><span class="n">11</span><h2>Week</h2></div>
+    <p class="why">Not a calendar grid — a ledger. Moved dates are flagged in the critical
+      colour because a silent reschedule is the failure mode that matters.</p>
+    <div class="phone">
+      <div class="sb"><span>20:07</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">August · 3 armed</div><h3>This week</h3></div>
+      <div class="bd">
+        <div class="ag now" style="border-top:none"><div class="dt">Tue 18</div>
+          <div class="g"><div class="a1">Nothing to send</div>
+            <div class="a2">3 waiting in review</div></div></div>
+        <div class="ag"><div class="dt">Wed 19</div>
+          <div class="g"><div class="a1">Tricolour outfit · snacks bag only</div>
+            <div class="a2">All day · 20:00 + 06:30 armed</div></div></div>
+        <div class="ag"><div class="dt">Fri 21</div>
+          <div class="g"><div class="a1">Sports Day — house colours</div>
+            <div class="a2"><span style="color:var(--critical)">MOVED FROM 20 AUG</span></div></div></div>
+        <div class="ag"><div class="dt">Mon 24</div>
+          <div class="g"><div class="a1">PTM slot 11:30</div>
+            <div class="a2">From a decision · 10:30 armed</div></div></div>
+      </div>
+      <div class="tb"><div>TODAY</div><div>REVIEW 3</div><div class="on">WEEK</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 12 OPEN -->
+  <section class="screen" id="s12">
+    <div class="cap"><span class="n">12</span><h2>Open items</h2></div>
+    <p class="why">Undated to-dos, Maybe resurfaces and missed alarms in one ledger. A missed
+      alarm stays and says so — it does not quietly vanish because it fired at 06:30.</p>
+    <div class="phone">
+      <div class="sb"><span>20:08</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">2 open · 1 missed</div><h3>Open items</h3></div>
+      <div class="bd">
+        <div class="lbl">Missed — still here</div>
+        <div class="ag" style="border-top:none"><div class="dt" style="color:var(--critical)">06:30</div>
+          <div class="g"><div class="a1">Consent form — return at the earliest</div>
+            <div class="a2"><span style="color:var(--critical)">FIRED, NOT DISMISSED</span></div></div></div>
+        <div class="lbl" style="margin-top:16px">To do</div>
+        <div class="ag"><div class="dt">—</div>
+          <div class="g"><div class="a1">Fees payable — Term 2</div>
+            <div class="a2">No day · 06:30 tomorrow</div></div></div>
+        <div class="lbl" style="margin-top:16px">Maybe — returning</div>
+        <div class="ag"><div class="dt">Fri</div>
+          <div class="g"><div class="a1">Pre-loved sweaters</div>
+            <div class="a2">Returns 21 Aug 15:15</div></div></div>
+      </div>
+      <div class="tb"><div>TODAY</div><div>REVIEW 3</div><div class="on">WEEK</div><div>SET</div></div>
+    </div>
+  </section>
+
+  <!-- 13 SETTINGS -->
+  <section class="screen" id="s13">
+    <div class="cap"><span class="n">13</span><h2>Settings</h2></div>
+    <p class="why">Reads as a status panel. The backup line is the only red thing, because it
+      is the only genuinely unresolved risk on this screen.</p>
+    <div class="phone">
+      <div class="sb"><span>20:09</span><span>◼ ◼ ◼</span></div>
+      <div class="hd"><div class="k">Synced 2 min ago</div><h3>Settings</h3></div>
+      <div class="bd">
+        <div class="lbl">Times</div>
+        <div class="fld"><div class="g"><div class="f1">Need to know by</div></div>
+          <div class="v">06:30</div></div>
+        <div class="fld"><div class="g"><div class="f1">Evening briefing</div></div>
+          <div class="v">20:00</div></div>
+        <div class="fld"><div class="g"><div class="f1">School / dispersal</div></div>
+          <div class="v">08:00 / 15:30</div></div>
+        <div class="lbl" style="margin-top:16px">Mail</div>
+        <div class="fld"><div class="g"><div class="f1">Senders</div>
+          <div class="f2">1 domain · 2 addresses</div></div></div>
+        <div class="fld"><div class="g"><div class="f1">Check for mail</div>
+          <div class="f2">Once a day, and on open</div></div></div>
+        <div class="lbl" style="margin-top:16px">This phone</div>
+        <div class="fld"><div class="g"><div class="f1">Backup to Files</div>
+          <div class="f2" style="color:var(--critical)">NEVER — A LOST PHONE LOSES
+            EVERYTHING</div></div></div>
+        <div class="fld"><div class="g"><div class="f1">Disconnect Gmail</div>
+          <div class="f2">Revokes access, erases local data</div></div></div>
+      </div>
+      <div class="tb"><div>TODAY</div><div>REVIEW 3</div><div>WEEK</div><div class="on">SET</div></div>
+    </div>
+  </section>
+
+  <!-- 14 RECONNECT -->
+  <section class="screen" id="s14">
+    <div class="cap"><span class="n">14</span><h2>Reconnect</h2></div>
+    <p class="why">The alarm metaphor pays off here: "no alarms are armed" is a sentence a
+      parent instantly understands as dangerous, in a way "token expired" never will be.</p>
+    <div class="phone">
+      <div class="sb"><span>07:02</span><span>◼ ◼ ◼</span></div>
+      <div class="bd mid">
+        <span class="flag">NOT WATCHING</span>
+        <div style="font-size:31px;font-weight:700;letter-spacing:-.04em;line-height:1.08;
+          margin:14px 0 12px">No alarms<br>are armed.</div>
+        <p style="font-size:12.5px;color:var(--ink-2);margin:0">Google signed the app out
+          3 days ago. New circulars are not being read, and nothing will wake you.</p>
+        <button class="big-btn crit">RECONNECT GMAIL</button>
+        <p style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.08em;
+          margin-top:14px">HAPPENS IF YOU CHANGED YOUR GOOGLE PASSWORD</p>
+      </div>
+    </div>
+  </section>
+
+  </div>
+
+  <section id="cmp" style="margin-top:56px">
+    <div class="cap"><span class="n">COMPARE</span><h2>A versus B</h2></div>
+    <table class="cmp">
+      <tr><th></th><th>A — Family &amp; friendly</th><th>B — Instrument</th></tr>
+      <tr><td>Home screen</td><td>Review queue: triage first</td>
+        <td>Statement: the answer first, triage second</td></tr>
+      <tr><td>Metaphor</td><td>Card inbox, Peggy-adjacent</td>
+        <td>Alarm clock — alarms are visible, toggleable objects</td></tr>
+      <tr><td>Default mode</td><td>Light, warm canvas</td>
+        <td>Dark; the two moments that matter are 20:00 and 06:15</td></tr>
+      <tr><td>Colour use</td><td>Four type accents plus urgency</td>
+        <td>Near-monochrome, one signal colour that only means "act"</td></tr>
+      <tr><td>Triage</td><td>One card at a time, swipe</td>
+        <td>All pending visible, inline actions</td></tr>
+      <tr><td>Shape</td><td>22px radius, soft shadow</td>
+        <td>Hairlines, 0–4px radius, no shadow</td></tr>
+      <tr><td>Numerals</td><td>Prose dates</td>
+        <td>Tabular mono — times read as instrument output</td></tr>
+      <tr><td>Feels like</td><td>A family app that happens to alarm</td>
+        <td>An alarm that happens to read mail</td></tr>
+      <tr><td>Strongest for</td><td>A second parent who didn't build it</td>
+        <td>Trusting it at 06:29 — you can see the alarms are set</td></tr>
+      <tr><td>Weakest at</td><td>Cuteness can undercut urgency</td>
+        <td>Can read cold, or technical, to a non-technical partner</td></tr>
+    </table>
+    <div class="lbl" style="margin-top:34px">Tokens</div>
+    <div class="toks">
+      <div class="tk"><div class="s" style="background:#0B0C0E"></div>
+        <div class="l"><b>Canvas</b><span>#0B0C0E</span></div></div>
+      <div class="tk"><div class="s" style="background:#14161A"></div>
+        <div class="l"><b>Surface</b><span>#14161A</span></div></div>
+      <div class="tk"><div class="s" style="background:#272B33"></div>
+        <div class="l"><b>Hairline</b><span>#272B33</span></div></div>
+      <div class="tk"><div class="s" style="background:#FFB020"></div>
+        <div class="l"><b>Signal</b><span>#FFB020</span></div></div>
+      <div class="tk"><div class="s" style="background:#FF5A5A"></div>
+        <div class="l"><b>Critical</b><span>#FF5A5A</span></div></div>
+      <div class="tk"><div class="s" style="background:#34D399"></div>
+        <div class="l"><b>Armed</b><span>#34D399</span></div></div>
+      <div class="tk"><div class="s" style="background:#F3F5F8"></div>
+        <div class="l"><b>Ink</b><span>#F3F5F8</span></div></div>
+      <div class="tk"><div class="s" style="background:#5C6472"></div>
+        <div class="l"><b>Ink 3</b><span>#5C6472</span></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <h2>What carries over unchanged</h2>
+  <p>These are product rules, not style, so both directions obey them:</p>
+  <ul>
+    <li>The item is the headline — never a festival name, never a circular number.</li>
+    <li>Nothing hides: couldn't-read and sync-incomplete are destinations with counts.</li>
+    <li>Sanitise at render only; stored text stays the school's exact words.</li>
+    <li>Type is never signalled by colour alone — here it's a mono word plus a border.</li>
+  </ul>
+  <h2>Three ideas from B worth stealing even if you pick A</h2>
+  <ul>
+    <li><b>Alarms as visible, toggleable objects.</b> "Are my alarms actually set?" is the
+      question that makes or breaks trust in this app, and neither a card queue nor a calendar
+      answers it. This is the strongest single idea in either direction.</li>
+    <li><b>Statement-first home.</b> Opening on the answer rather than a to-triage queue means
+      the app is useful even on a day you have no intention of tidying anything.</li>
+    <li><b>Edit screen shows rejected dates.</b> "15 August — rejected, letterhead" turns
+      Edit into a window on the parser and will save you debugging time all term.</li>
+  </ul>
+  <h2>Honest risk</h2>
+  <p>B is more likely to impress you and less likely to charm a co-parent. If the second
+    installer is your wife rather than another engineer, A's warmth is doing real work and
+    B's precision is mostly doing work for you. The hybrid worth considering is A's palette
+    and voice on B's architecture — statement home, visible alarms, list triage.</p>
+</footer>
+</body>
+</html>
