@@ -5,6 +5,7 @@ abstract final class SettingKey {
   static const nightBeforeHour = 'night_before_hour';
   static const morningOfHour = 'morning_of_hour';
   static const retentionDays = 'body_retention_days';
+  static const nagMutedIds = 'nag_muted_item_ids';
 }
 
 class SettingsRepository {

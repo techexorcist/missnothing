@@ -132,6 +132,8 @@ void main() {
         misses.singleWhere((miss) => miss.id == 'm1').subject,
         'Sports day circular',
       );
+      final waiting = await index.incompletes();
+      expect(waiting.single.id, 'm4');
     },
   );
 }

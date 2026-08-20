@@ -1,29 +1,21 @@
 import 'package:flutter/material.dart';
 
+import '../ui/skins/dawn_dusk.dart';
 import 'mn_tokens.dart';
 export 'mn_tokens.dart';
 
-ThemeData buildLightTheme() {
-  const tokens = MnTokens.light;
-  return _theme(
-    ColorScheme.fromSeed(seedColor: tokens.brand, brightness: Brightness.light),
-    tokens,
-  );
-}
+ThemeData buildLightTheme() => buildTheme(dawn);
 
-ThemeData buildDarkTheme() {
-  const tokens = MnTokens.dark;
-  return _theme(
-    ColorScheme.fromSeed(seedColor: tokens.brand, brightness: Brightness.dark),
-    tokens,
-  );
-}
+ThemeData buildDarkTheme() => buildTheme(dusk);
 
-ThemeData _theme(ColorScheme scheme, MnTokens tokens) {
+ThemeData buildTheme(MnTokens tokens) {
+  final dark = tokens.canvas.computeLuminance() < 0.5;
+  final scheme = ColorScheme.fromSeed(
+    seedColor: tokens.brand,
+    brightness: dark ? Brightness.dark : Brightness.light,
+  );
   final base =
-      (scheme.brightness == Brightness.dark
-              ? Typography.material2021().white
-              : Typography.material2021().black)
+      (dark ? Typography.material2021().white : Typography.material2021().black)
           .apply(bodyColor: tokens.ink, displayColor: tokens.ink);
   return ThemeData(
     useMaterial3: true,
@@ -47,7 +39,7 @@ ThemeData _theme(ColorScheme scheme, MnTokens tokens) {
       elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(color: tokens.line, width: tokens.border),
-        borderRadius: BorderRadius.circular(0),
+        borderRadius: BorderRadius.circular(tokens.radius),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
@@ -69,7 +61,7 @@ ThemeData _theme(ColorScheme scheme, MnTokens tokens) {
         foregroundColor: tokens.ink,
         shape: RoundedRectangleBorder(
           side: BorderSide(color: tokens.line, width: tokens.border),
-          borderRadius: BorderRadius.circular(0),
+          borderRadius: BorderRadius.circular(tokens.radius),
         ),
       ),
     ),

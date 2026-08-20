@@ -88,6 +88,17 @@ class AlarmRepository {
     )..where((row) => row.id.equals(child.id.value))).getSingle());
   }
 
+  Future<void> setArmed(String alarmId, {required bool armed}) async {
+    await (db.update(
+      db.alarmSchedules,
+    )..where((row) => row.id.equals(alarmId))).write(
+      AlarmSchedulesCompanion(
+        status: Value(armed ? AlarmStatus.scheduled : AlarmStatus.cancelled),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
   Future<void> markDoneForEvent(String eventId) async {
     await (db.update(
       db.alarmSchedules,

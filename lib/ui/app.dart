@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/app_theme.dart';
+import 'skins/dawn_dusk.dart';
 import 'app_shell.dart';
 import 'screens/event_detail_screen.dart';
+import 'screens/incomplete_screen.dart';
 import 'screens/kid_mode_screen.dart';
 import 'screens/misses_screen.dart';
+import 'screens/open_items_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/reconnect_screen.dart';
 import 'screens/unlock_screen.dart';
@@ -62,8 +65,9 @@ class _MissNothingAppState extends State<MissNothingApp> {
       overrides: [sessionProvider.overrideWith((ref) => _session)],
       child: MaterialApp.router(
         title: 'MissNothing',
-        theme: buildLightTheme(),
-        darkTheme: buildDarkTheme(),
+        theme: buildTheme(tokensForClock(DateTime.now())),
+        darkTheme: buildTheme(dusk),
+        themeMode: ThemeMode.light,
         routerConfig: _router,
       ),
     );
@@ -108,6 +112,14 @@ GoRouter _buildRouter(AppSession session) {
       GoRoute(
         path: '/misses',
         builder: (context, state) => MissesScreen(session: session),
+      ),
+      GoRoute(
+        path: '/incomplete',
+        builder: (context, state) => IncompleteScreen(session: session),
+      ),
+      GoRoute(
+        path: '/open',
+        builder: (context, state) => OpenItemsScreen(session: session),
       ),
       GoRoute(
         path: '/event/:id',

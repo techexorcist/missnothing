@@ -15,6 +15,14 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter analyze
+      - name: Hex literals stay in skin files
+        run: |
+          hits=$(grep -R --include='*.dart' -n 'Color(0x' lib | grep -v '^lib/ui/skins/' || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "Color(0x literals must live under lib/ui/skins/"
+            exit 1
+          fi
       - run: flutter test
 
   backend:

@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/db/database.dart';
 import '../../data/events/event_repository.dart';
+import '../../data/reminders/alarm_planner.dart';
 import '../../theme/mn_tokens.dart';
 import '../session.dart';
+
+String tomorrowStatement(List<LayoutSlot> slots) {
+  if (slots.isEmpty) return 'Nothing to put out.';
+  final names = [for (final slot in slots) slot.headline];
+  if (names.length == 1) return 'Tomorrow: ${names.single}.';
+  if (names.length == 2) return 'Tomorrow: ${names[0]}. And ${names[1]}.';
+  return 'Tomorrow: ${names.first}. And ${names.length - 1} more.';
+}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.session});
@@ -44,11 +54,14 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     if (session.syncIncomplete > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
+                      TextButton(
+                        onPressed: () => context.push('/incomplete'),
                         child: Text(
                           '${session.syncIncomplete} still downloading',
-                          style: TextStyle(color: tokens.ink),
+                          style: TextStyle(
+                            color: tokens.ink,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                   ],
@@ -78,7 +91,7 @@ class HomeScreen extends StatelessWidget {
                   style: _kicker(tokens),
                 ),
                 const SizedBox(height: 8),
-                Text('Put it out\ntonight.', style: _display(tokens, 32)),
+                Text(tomorrowStatement(slots), style: _display(tokens, 32)),
                 const SizedBox(height: 8),
                 Text(
                   '$out of ${slots.length} out',
@@ -89,12 +102,20 @@ class HomeScreen extends StatelessWidget {
                   _SlotRow(
                     slot: slot,
                     onToggle: () => session.toggleLaidOut(slot),
+                    onStopAsking: slot.nagMuted
+                        ? null
+                        : () => session.stopAsking(slot),
                   ),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () => context.push('/kid'),
-                  child: const Text('SHOW THE CHILD'),
-                ),
+                if (session.pendingAlarms.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text('ARMED', style: _kicker(tokens)),
+                  const SizedBox(height: 8),
+                  for (final alarm in session.pendingAlarms)
+                    _AlarmToggle(
+                      alarm: alarm,
+                      onToggle: () => session.toggleAlarm(alarm),
+                    ),
+                ],
                 if (session.reviewCount > 0)
                   TextButton(
                     onPressed: () => context.go('/review'),
@@ -115,9 +136,15 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
               if (session.syncIncomplete > 0)
-                Text(
-                  '${session.syncIncomplete} still downloading',
-                  style: TextStyle(color: tokens.ink2),
+                TextButton(
+                  onPressed: () => context.push('/incomplete'),
+                  child: Text(
+                    '${session.syncIncomplete} still downloading',
+                    style: TextStyle(
+                      color: tokens.ink2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
             ],
           );
@@ -180,10 +207,15 @@ class _Kettle extends StatelessWidget {
 }
 
 class _SlotRow extends StatelessWidget {
-  const _SlotRow({required this.slot, required this.onToggle});
+  const _SlotRow({
+    required this.slot,
+    required this.onToggle,
+    this.onStopAsking,
+  });
 
   final LayoutSlot slot;
   final VoidCallback onToggle;
+  final VoidCallback? onStopAsking;
 
   @override
   Widget build(BuildContext context) {
@@ -215,10 +247,21 @@ class _SlotRow extends StatelessWidget {
                     color: tokens.ink,
                   ),
                 ),
-                if (slot.subtitle.isNotEmpty || slot.leaveAtHome)
+                if (slot.subtitle.isNotEmpty ||
+                    slot.leaveAtHome ||
+                    slot.nagMuted)
                   Text(
-                    slot.leaveAtHome ? 'Leave it at home' : slot.subtitle,
+                    slot.nagMuted
+                        ? 'Stopped asking'
+                        : slot.leaveAtHome
+                        ? 'Leave it at home'
+                        : slot.subtitle,
                     style: TextStyle(fontSize: 11, color: tokens.ink2),
+                  ),
+                if (onStopAsking != null)
+                  TextButton(
+                    onPressed: onStopAsking,
+                    child: const Text('STOP ASKING'),
                   ),
               ],
             ),
@@ -275,6 +318,33 @@ TextStyle _display(MnTokens tokens, double size) {
     letterSpacing: -0.6,
     color: tokens.ink,
   );
+}
+
+class _AlarmToggle extends StatelessWidget {
+  const _AlarmToggle({required this.alarm, required this.onToggle});
+
+  final AlarmSchedule alarm;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = MnTokens.of(context);
+    final local = alarm.fireAt.toLocal();
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    final label = switch (alarm.kind) {
+      AlarmKind.nightBefore => '$hh:$mm Put it out',
+      AlarmKind.morningOf => '$hh:$mm Still not out',
+      _ => '$hh:$mm ${alarm.kind.replaceAll('_', ' ')}',
+    };
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(label, style: TextStyle(color: tokens.ink)),
+      value: alarm.status == AlarmStatus.scheduled,
+      activeThumbColor: tokens.confirmed,
+      onChanged: (_) => onToggle(),
+    );
+  }
 }
 
 String _shortDate(DateTime day) {

@@ -44,11 +44,16 @@ class AppSession extends ChangeNotifier {
   String? pendingEventId;
   String? lastUndoProposalId;
   List<ProposalRecord> inbox = const [];
+  List<ProposalRecord> maybeCards = const [];
   List<Event> agenda = const [];
+  List<Event> weekEvents = const [];
+  List<Event> openEvents = const [];
   List<LayoutSlot> tomorrowSlots = const [];
+  List<AlarmSchedule> pendingAlarms = const [];
   List<SourceAllowlistEntry> allowlist = const [];
   List<AppAccount> accounts = const [];
   List<GmailMiss> misses = const [];
+  List<GmailMiss> incompletes = const [];
   int couldntRead = 0;
   int syncIncomplete = 0;
   Future<void>? _refreshing;
@@ -124,8 +129,24 @@ class AppSession extends ChangeNotifier {
       return;
     }
     await opened.use((db) async {
-      inbox = await ProposalRepository(db).unreviewedRecords();
+      final pending = await ProposalRepository(db).unreviewedRecords();
+      inbox = [
+        for (final card in pending)
+          if (card.row.status == ProposalStatus.unreviewed) card,
+      ];
+      maybeCards = [
+        for (final card in pending)
+          if (card.row.status == ProposalStatus.maybe) card,
+      ];
       agenda = await EventRepository(db).active();
+      weekEvents = [
+        for (final event in agenda)
+          if (event.startsAt != null) event,
+      ];
+      openEvents = [
+        for (final event in agenda)
+          if (event.startsAt == null) event,
+      ];
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       tomorrowSlots = [
         for (final slot in await EventRepository(db).slotsOn(tomorrow))
@@ -138,8 +159,10 @@ class AppSession extends ChangeNotifier {
             laidOut: slot.laidOut,
             leaveAtHome:
                 looksBagless(slot.headline) || looksBagless(slot.subtitle),
+            nagMuted: slot.nagMuted,
           ),
       ];
+      pendingAlarms = await AlarmRepository(db).pending();
       allowlist = await SourceRepository(db).allowlistRows();
       accounts = await db.select(db.appAccounts).get();
       reviewCount = inbox.length;
@@ -148,6 +171,7 @@ class AppSession extends ChangeNotifier {
       couldntRead = counts.couldntRead;
       syncIncomplete = counts.incomplete;
       misses = await GmailMessageIndex(db).misses();
+      incompletes = await GmailMessageIndex(db).incompletes();
       try {
         await GlanceState(db).publish();
       } catch (_) {}
@@ -308,6 +332,28 @@ class AppSession extends ChangeNotifier {
     await vault?.use((db) {
       return EventRepository(db).setLaidOut(slot.itemId, !slot.laidOut);
     });
+    await refreshFromVault();
+  }
+
+  Future<void> stopAsking(LayoutSlot slot) async {
+    await vault?.use((db) {
+      return EventRepository(db).setNagMuted(slot.itemId, muted: true);
+    });
+    await refreshFromVault();
+  }
+
+  Future<void> toggleAlarm(AlarmSchedule row) async {
+    final opened = vault;
+    if (opened == null) return;
+    final arm = row.status != AlarmStatus.scheduled;
+    await opened.use((db) {
+      return AlarmRepository(db).setArmed(row.id, armed: arm);
+    });
+    if (arm) {
+      await EventAlarms.scheduleRow(row);
+    } else {
+      await EventAlarms.cancel([row.notificationId]);
+    }
     await refreshFromVault();
   }
 

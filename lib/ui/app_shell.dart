@@ -22,7 +22,7 @@ class AppShell extends StatelessWidget {
     return ListenableBuilder(
       listenable: session,
       builder: (context, _) {
-        const titles = ['Tomorrow', 'Sort', 'Term', 'Set'];
+        const titles = ['Tomorrow', 'Sort', 'Week', 'Set'];
         final wide = MediaQuery.sizeOf(context).width >= 840;
         final destinations = [
           const NavigationDestination(
@@ -39,10 +39,18 @@ class AppShell extends StatelessWidget {
             selectedIcon: const Icon(Icons.style),
             label: 'Sort',
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Term',
+          NavigationDestination(
+            icon: Badge(
+              isLabelVisible:
+                  session.openEvents.isNotEmpty ||
+                  session.maybeCards.isNotEmpty,
+              label: Text(
+                '${session.openEvents.length + session.maybeCards.length}',
+              ),
+              child: const Icon(Icons.calendar_month_outlined),
+            ),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: 'Week',
           ),
           const NavigationDestination(
             icon: Icon(Icons.settings_outlined),

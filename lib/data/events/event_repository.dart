@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
+import '../settings/settings_repository.dart';
 
 class EventRecord {
   const EventRecord({required this.event, required this.items});
@@ -42,7 +43,26 @@ class EventRepository {
     );
   }
 
+  Future<Set<String>> mutedItemIds() async {
+    final raw = await SettingsRepository(db).get(SettingKey.nagMutedIds) ?? '';
+    return {
+      for (final id in raw.split(','))
+        if (id.isNotEmpty) id,
+    };
+  }
+
+  Future<void> setNagMuted(String itemId, {required bool muted}) async {
+    final ids = await mutedItemIds();
+    if (muted) {
+      ids.add(itemId);
+    } else {
+      ids.remove(itemId);
+    }
+    await SettingsRepository(db).set(SettingKey.nagMutedIds, ids.join(','));
+  }
+
   Future<List<LayoutSlot>> slotsOn(DateTime day) async {
+    final muted = await mutedItemIds();
     final events = await active();
     final out = <LayoutSlot>[];
     for (final event in events) {
@@ -59,6 +79,7 @@ class EventRepository {
             kind: 'other',
             laidOut: false,
             leaveAtHome: false,
+            nagMuted: muted.contains(event.id),
           ),
         );
         continue;
@@ -73,6 +94,7 @@ class EventRepository {
             kind: item.kind,
             laidOut: item.completed,
             leaveAtHome: false,
+            nagMuted: muted.contains(item.id),
           ),
         );
       }
@@ -95,6 +117,7 @@ class LayoutSlot {
     required this.kind,
     required this.laidOut,
     required this.leaveAtHome,
+    this.nagMuted = false,
   });
 
   final String itemId;
@@ -104,6 +127,7 @@ class LayoutSlot {
   final String kind;
   final bool laidOut;
   final bool leaveAtHome;
+  final bool nagMuted;
 }
 
 bool _sameDay(DateTime? value, DateTime day) {

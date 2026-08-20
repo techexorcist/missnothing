@@ -87,6 +87,8 @@ void main() {
     expect(slots.first.laidOut, isFalse);
     await events.setLaidOut(slots.first.itemId, true);
     expect((await events.slotsOn(day.toLocal())).first.laidOut, isTrue);
+    await events.setNagMuted(slots.first.itemId, muted: true);
+    expect((await events.slotsOn(day.toLocal())).first.nagMuted, isTrue);
   });
 
   test('skipped proposals are sticky across reparses', () async {

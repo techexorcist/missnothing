@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:missnothing/data/db/gmail_message_index.dart';
+import 'package:missnothing/data/events/event_repository.dart';
 import 'package:missnothing/ui/app.dart';
+import 'package:missnothing/ui/screens/home_screen.dart';
 import 'package:missnothing/ui/session.dart';
 
 class TestSession extends AppSession {
@@ -32,7 +34,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Tomorrow'), findsWidgets);
     expect(find.text('Sort'), findsWidgets);
-    expect(find.text('Term'), findsWidgets);
+    expect(find.text('Week'), findsWidgets);
     expect(find.text('Set'), findsWidgets);
     handle.dispose();
   });
@@ -91,5 +93,46 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Reconnect Gmail'), findsWidgets);
     expect(find.textContaining('gmail.readonly'), findsOneWidget);
+  });
+
+  testWidgets('home names tomorrow as objects and opens incompletes', (
+    tester,
+  ) async {
+    final session = TestSession()
+      ..tomorrowSlots = const [
+        LayoutSlot(
+          itemId: 'i1',
+          eventId: 'e1',
+          headline: 'ethnic outfit',
+          subtitle: '',
+          kind: 'dress',
+          laidOut: false,
+          leaveAtHome: false,
+        ),
+        LayoutSlot(
+          itemId: 'i2',
+          eventId: 'e1',
+          headline: 'snacks bag',
+          subtitle: '',
+          kind: 'bring',
+          laidOut: true,
+          leaveAtHome: true,
+        ),
+      ]
+      ..syncIncomplete = 2
+      ..incompletes = const [
+        GmailMiss(id: 'm9', status: 'listed', subject: 'Sports day PDF'),
+      ];
+    await tester.pumpWidget(MissNothingApp(session: session));
+    await tester.pumpAndSettle();
+
+    expect(find.text(tomorrowStatement(session.tomorrowSlots)), findsOneWidget);
+    expect(find.textContaining('1 of 2 out'), findsOneWidget);
+    expect(find.text('STOP ASKING'), findsWidgets);
+
+    await tester.tap(find.textContaining('still downloading'));
+    await tester.pumpAndSettle();
+    expect(find.text('Still downloading'), findsWidgets);
+    expect(find.text('Sports day PDF'), findsOneWidget);
   });
 }

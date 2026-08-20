@@ -122,6 +122,28 @@ class GmailMessageIndex {
     );
   }
 
+  Future<List<GmailMiss>> incompletes({int limit = 40}) async {
+    final rows = await db
+        .customSelect(
+          'SELECT message_id, parse_status, subject_raw FROM gmail_messages '
+          'WHERE parse_status = ? '
+          'ORDER BY last_seen_at DESC LIMIT ?;',
+          variables: [
+            Variable<String>(GmailParseStatus.listed),
+            Variable<int>(limit),
+          ],
+        )
+        .get();
+    return [
+      for (final row in rows)
+        GmailMiss(
+          id: row.read<String>('message_id'),
+          status: row.read<String>('parse_status'),
+          subject: row.read<String?>('subject_raw'),
+        ),
+    ];
+  }
+
   Future<List<GmailMiss>> misses({int limit = 40}) async {
     final rows = await db
         .customSelect(

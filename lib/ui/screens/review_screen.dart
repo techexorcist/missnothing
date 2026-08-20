@@ -169,21 +169,27 @@ class _ReviewCard extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => session.skipProposal(card),
-                            child: const Text('BIN'),
+                            child: Text(
+                              card.row.type == 'decision' ? 'NO' : 'BIN',
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => session.maybeProposal(card),
-                            child: const Text('LATER'),
+                            child: Text(
+                              card.row.type == 'decision' ? 'MAYBE' : 'LATER',
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: FilledButton(
                             onPressed: () => session.confirmProposal(card),
-                            child: const Text('PUT OUT'),
+                            child: Text(
+                              card.row.type == 'decision' ? 'YES' : 'PUT OUT',
+                            ),
                           ),
                         ),
                       ],
